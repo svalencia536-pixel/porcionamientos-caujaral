@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Porcionamientos - Analisis de carniceria</title>
+<style>
+  :root {
+    --bg: #F2F2F2;
+    --surface: #ffffff;
+    --surface-2: #f5f8fb;
+    --border: #dfe2e4;
+    --text: #1c262c;
+    --text-muted: #5c6670;
+    --accent: #0F6EBE;
+    --accent-dark: #0b5590;
+    --accent-soft: #e5f1fb;
+    --accent2: #A9C814;
+    --accent2-dark: #728f0f;
+    --accent2-soft: #f1f6d9;
+    --warn: #a86c1a;
+    --warn-soft: #f6ecd8;
+    --bad: #b3402e;
+    --bad-soft: #fbe9e6;
+    --shadow: 0 1px 2px rgba(15, 30, 45, 0.08), 0 4px 14px rgba(15, 30, 45, 0.08);
+    --font-display: "Segoe UI Semibold", "Segoe UI", Arial, sans-serif;
+    --font-body: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "Consolas", "SF Mono", "Roboto Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12181d;
+      --surface: #1a2229;
+      --surface-2: #202a32;
+      --border: #2c3844;
+      --text: #eef2f5;
+      --text-muted: #9aa8b3;
+      --accent: #4b9fe0;
+      --accent-dark: #6cb6e6;
+      --accent-soft: #1c2f42;
+      --accent2: #c3dc4f;
+      --accent2-dark: #d5e880;
+      --accent2-soft: #26301a;
+      --warn: #d0932f;
+      --warn-soft: #2e2818;
+      --bad: #d97a63;
+      --bad-soft: #301f1a;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12181d;
+    --surface: #1a2229;
+    --surface-2: #202a32;
+    --border: #2c3844;
+    --text: #eef2f5;
+    --text-muted: #9aa8b3;
+    --accent: #4b9fe0;
+    --accent-dark: #6cb6e6;
+    --accent-soft: #1c2f42;
+    --accent2: #c3dc4f;
+    --accent2-dark: #d5e880;
+    --accent2-soft: #26301a;
+    --warn: #d0932f;
+    --warn-soft: #2e2818;
+    --bad: #d97a63;
+    --bad-soft: #301f1a;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--font-body); background: var(--bg); color: var(--text); min-height: 100vh; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 24px 20px 70px; }
+
+  header.app-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+  .brand { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+  .club-badge { width: 42px; height: 42px; border-radius: 999px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--shadow); }
+  .live-pill { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; background: var(--accent2-soft); color: var(--accent2-dark); border: 1px solid color-mix(in srgb, var(--accent2) 35%, transparent); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .quien-soy { font-size: 12.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .quien-soy button { background: none; border: none; color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 12.5px; padding: 0; }
+
+  p.lede { color: var(--text-muted); max-width: 68ch; margin: 6px 0 20px; line-height: 1.5; font-size: 13.5px; }
+
+  nav.tabs { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 4px; width: fit-content; margin-bottom: 22px; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  nav.tabs button { font-family: var(--font-display); font-size: 13.5px; letter-spacing: 0.01em; border: none; background: transparent; color: var(--text-muted); padding: 8px 14px; border-radius: 7px; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+  nav.tabs button.active { background: var(--surface); color: var(--accent-dark); box-shadow: var(--shadow); font-weight: 600; }
+  nav.tabs button:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-family: var(--font-display); font-size: 17px; margin: 0 0 4px; letter-spacing: 0.01em; }
+  .card .card-sub { color: var(--text-muted); font-size: 12.5px; margin: 0 0 14px; }
+
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  label { display: block; font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+  input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); font-family: var(--font-body); font-size: 13.5px; }
+  input[disabled] { color: var(--text-muted); background: var(--surface-2); }
+  .field-note { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 9px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { font-family: var(--font-display); font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .table-scroll { overflow-x: auto; }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody tr.clickable { cursor: pointer; }
+  #tablaArticulosProducidos thead th { text-align: center; }
+
+  .btn { font-family: var(--font-body); font-weight: 600; font-size: 13px; border: none; border-radius: 7px; padding: 9px 15px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { background: var(--accent-dark); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn.secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent-dark); }
+  .btn.secondary:hover { background: var(--accent-soft); }
+  .btn.ghost { background: transparent; color: var(--bad); font-size: 12px; padding: 4px 8px; }
+  .btn.ghost:hover { text-decoration: underline; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; margin: 16px 0 4px; }
+  .kpi { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 13px; }
+  .kpi .k-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+  .kpi .k-value { font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums; margin-top: 3px; }
+
+  .recon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 18px; }
+  .recon-item .r-label { font-size: 11.5px; color: var(--text-muted); }
+  .recon-item .r-value { font-family: var(--font-mono); font-size: 15px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .recon-item.warn .r-value { color: var(--warn); }
+  .recon-item.bad .r-value { color: var(--bad); }
+  .recon-item.ok .r-value { color: var(--accent2-dark); }
+
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; font-family: var(--font-mono); }
+  .pill-ok { background: var(--accent2-soft); color: var(--accent2-dark); }
+  .pill-warn { background: var(--warn-soft); color: var(--warn); }
+  .pill-bad { background: var(--bad-soft); color: var(--bad); }
+
+  .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+  .barlist { display: flex; flex-direction: column; gap: 9px; margin-top: 6px; }
+  .barlist .barlabel { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+  .barlist .bartrack { height: 9px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+  .barlist .barfill { height: 100%; background: var(--accent); border-radius: 999px; }
+  .donut-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .legend { display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 7px; }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--accent-dark); color: #fff; padding: 11px 20px; border-radius: 9px; font-size: 13px; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: opacity 0.25s ease, transform 0.25s ease; z-index: 50; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+  .empty { color: var(--text-muted); text-align: center; padding: 16px 0; font-size: 13px; }
+  .detail-box { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border); display: none; }
+  .detail-box.show { display: block; }
+
+  .firmas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 30px; }
+  .firma-slot { text-align: center; }
+  .firma-linea { border-top: 1px solid var(--text); margin-bottom: 6px; height: 42px; }
+  .firma-rotulo { font-size: 11px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-muted); }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(20, 26, 30, 0.55); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal-card { background: var(--surface); border-radius: 14px; padding: 26px; max-width: 360px; width: 100%; box-shadow: var(--shadow); text-align: center; }
+  .modal-card h2 { font-family: var(--font-display); margin-top: 0; }
+
+  @media (max-width: 640px) {
+    .wrap { padding: 16px 12px 60px; }
+    h1 { font-size: 20px; }
+    .card { padding: 15px; }
+    .kpis, .charts-grid { grid-template-columns: 1fr 1fr; }
+    .firmas-grid { grid-template-columns: 1fr; gap: 24px; }
+    table { font-size: 12px; }
+    th, td { padding: 7px 8px; }
+  }
+  @media (max-width: 420px) {
+    .kpis, .charts-grid { grid-template-columns: 1fr; }
+  }
+
+  @page { size: A4 portrait; margin: 8mm; }
+  @media print {
+    body { background: #fff; font-size: 10.5px; }
+    .no-print, nav.tabs, p.lede, .toast, #btnAgregarFila, .btn.ghost, #btnGuardarLote,
+    .card .card-sub,
+    #tablaArticulosProducidos th:last-child, #tablaArticulosProducidos td:last-child,
+    #panel-historial, #panel-dashboard, #panel-estandares, #panel-matrizcortes, #panel-proveedores, #panel-ayuda {
+      display: none !important;
+    }
+    .panel { display: none !important; }
+    #panel-nuevo { display: block !important; }
+    .wrap { max-width: none; width: 100%; padding: 0; }
+    .card { box-shadow: none; border: 1px solid #ccc; padding: 7px 10px; margin-bottom: 5px; break-inside: avoid; }
+    .card h2 { font-size: 12.5px; margin: 0 0 3px; }
+    .row { margin-bottom: 5px; }
+    .kpis { grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 5px 0 0; }
+    .kpi { padding: 5px 6px; }
+    .recon-grid { grid-template-columns: repeat(3, 1fr); gap: 5px 12px; }
+    #inObs { min-height: 24px; }
+    .firmas-grid { margin-top: 16px; }
+    .firma-linea { height: 28px; margin-bottom: 5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="app-head">
+    <div class="brand">
+      <div class="club-badge" title="Club Lagos de Caujaral">
+        <svg viewBox="0 0 100 100" width="28" height="28" aria-hidden="true">
+          <path d="M50 12 A38 38 0 1 1 15 35" fill="none" stroke="#0F6EBE" stroke-width="11" stroke-linecap="round" />
+          <path d="M18 55 Q40 35 62 50 T88 48" fill="none" stroke="#A9C814" stroke-width="11" stroke-linecap="round" />
+          <path d="M55 15 L72 8 L66 26 Z" fill="#FFFFFF" />
+        </svg>
+      </div>
+      <div>
+        <h1>Porcionamientos - Análisis de carnicería</h1>
+        <span class="live-pill">💾 Guardado en este dispositivo</span>
+      </div>
+    </div>
+    <div class="quien-soy no-print" id="quienSoyBox"></div>
+  </header>
+  <p class="lede">
+    Club Lagos de Caujaral. Lo que registres aquí queda guardado en este mismo navegador/celular
+    (no se sincroniza automáticamente con otros dispositivos).
+  </p>
+
+  <nav class="tabs no-print" role="tablist">
+    <button class="active" data-tab="nuevo" role="tab" aria-selected="true">Nuevo lote</button>
+    <button data-tab="historial" role="tab" aria-selected="false">Historial</button>
+    <button data-tab="estandares" role="tab" aria-selected="false">Estándares</button>
+    <button data-tab="matrizcortes" role="tab" aria-selected="false">Matriz cortes</button>
+    <button data-tab="proveedores" role="tab" aria-selected="false">Proveedores</button>
+    <button data-tab="dashboard" role="tab" aria-selected="false">Dashboard</button>
+    <button data-tab="ayuda" role="tab" aria-selected="false">📖 Ayuda</button>
+  </nav>
+
+  <!-- ===================== TAB: NUEVO LOTE ===================== -->
+  <section class="panel active" id="panel-nuevo">
+    <div class="card">
+      <h2>Artículo porcionado</h2>
+      <p class="card-sub">La materia prima que se está cortando en este lote.</p>
+      <div class="row">
+        <div>
+          <label for="inProducto">Materia prima</label>
+          <select id="inProducto"></select>
+        </div>
+        <div>
+          <label for="inProveedor">Proveedor</label>
+          <select id="inProveedor"><option value="">Sin especificar</option></select>
+        </div>
+        <div>
+          <label for="inFecha">Fecha</label>
+          <input id="inFecha" type="date" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="inPrecio">Precio de compra por kg ($)</label>
+          <input id="inPrecio" type="text" inputmode="decimal" />
+          <p class="field-note">Se sugiere desde el catálogo, pero se asigna cada vez — igual que en factura.</p>
+        </div>
+        <div>
+          <label for="inPeso">Peso porcionado (kg)</label>
+          <input id="inPeso" type="text" inputmode="decimal" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Artículos producidos</h2>
+      <p class="card-sub">El valor de la factura se reparte por gramo entre los artículos producidos.</p>
+      <div class="table-scroll">
+        <table id="tablaArticulosProducidos">
+          <thead>
+            <tr>
+              <th>Artículo</th>
+              <th class="num">Peso unit. (g)</th>
+              <th class="num">Cantidad</th>
+              <th class="num">Peso total</th>
+              <th class="num">Valor/unidad</th>
+              <th class="num">Valor total</th>
+              <th class="num">%REN</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="filasArticulos"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;">
+        <button type="button" class="btn secondary" id="btnAgregarFila">+ Agregar artículo producido</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📉 Pérdidas y merma</h2>
+      <div class="row">
+        <div>
+          <label for="inMermaLiquidos">Mermas líquidos (g)</label>
+          <input id="inMermaLiquidos" type="text" inputmode="decimal" value="0" />
+        </div>
+        <div>
+          <label for="inMermaHuesoGordo">Desperdicio hueso/gordo (g)</label>
+          <input id="inMermaHuesoGordo" type="text" inputmode="decimal" value="0" />
+        </div>
+        <div>
+          <label for="inDifNoIdentificada">Dif. no identificada (g)</label>
+          <input id="inDifNoIdentificada" type="text" disabled />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧾 Conciliación de factura</h2>
+      <div class="recon-grid">
+        <div class="recon-item"><div class="r-label">Valor factura</div><div class="r-value" id="rcValorFactura">—</div></div>
+        <div class="recon-item"><div class="r-label">Valor absorbido</div><div class="r-value" id="rcValorAbsorbido">—</div></div>
+        <div class="recon-item" id="rcDiferenciaBox"><div class="r-label">Diferencia de valor</div><div class="r-value" id="rcDiferencia">—</div></div>
+        <div class="recon-item"><div class="r-label">Gramos ingresados</div><div class="r-value" id="rcGramosIngresados">—</div></div>
+        <div class="recon-item"><div class="r-label">Gramos explicados</div><div class="r-value" id="rcGramosExplicados">—</div></div>
+        <div class="recon-item" id="rcSinExplicarBox"><div class="r-label">⚠️ Sin explicar</div><div class="r-value" id="rcGramosSinExplicar">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>✅ Resultado del análisis</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="k-label">Gramos productivos</div><div class="k-value" id="kpiGramosProductivos">—</div></div>
+        <div class="kpi"><div class="k-label">Costo por gramo</div><div class="k-value" id="kpiCostoGramo">—</div></div>
+        <div class="kpi"><div class="k-label">Total pérdida (g)</div><div class="k-value" id="kpiPerdidaG">—</div></div>
+        <div class="kpi"><div class="k-label">💰 Valor pérdida</div><div class="k-value" id="kpiValorPerdida">—</div></div>
+        <div class="kpi"><div class="k-label">Rendimiento</div><div class="k-value" id="kpiRendimiento">—</div></div>
+        <div class="kpi"><div class="k-label">% Pérdida</div><div class="k-value" id="kpiMerma">—</div></div>
+        <div class="kpi"><div class="k-label">Estado vs. estándar</div><div class="k-value" id="kpiEstado" style="font-size:14px;">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="inObs">Observaciones</label>
+      <textarea id="inObs" rows="2" placeholder="Opcional"></textarea>
+      <div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;" class="no-print">
+        <button type="button" class="btn" id="btnGuardarLote">Guardar lote</button>
+        <button type="button" class="btn secondary" id="btnExportarPDF">📄 Exportar PDF</button>
+        <button type="button" class="btn secondary" id="btnExportarExcel">📊 Exportar Excel</button>
+        <button type="button" class="btn secondary" id="btnCompartirLote">📤 Compartir</button>
+      </div>
+      <div class="firmas-grid">
+        <div class="firma-slot"><div class="firma-linea"></div><div class="firma-rotulo">Porcionado por</div></div>
+        <div class="firma-slot"><div class="firma-linea"></div><div class="firma-rotulo">Elaborado por</div></div>
+        <div class="firma-slot"><div class="firma-linea"></div><div class="firma-rotulo">Verificado por</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB: HISTORIAL ===================== -->
+  <section class="panel" id="panel-historial">
+    <div class="card">
+      <h2>Historial de lotes</h2>
+      <p class="card-sub">Haz clic en una fila para ver el detalle por artículo producido.</p>
+      <div class="row" style="align-items:flex-end;">
+        <div><label for="histDesde">Desde</label><input id="histDesde" type="date" /></div>
+        <div><label for="histHasta">Hasta</label><input id="histHasta" type="date" /></div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn secondary" id="btnHistFiltrar">Filtrar</button>
+          <button type="button" class="btn ghost" id="btnHistLimpiar" style="font-size:13px;">Limpiar</button>
+        </div>
+        <div style="margin-left:auto; display:flex; align-items:flex-end;">
+          <button type="button" class="btn secondary" id="btnCompartir">📤 Compartir</button>
+        </div>
+      </div>
+      <div class="kpis" id="resumen"></div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th class="num">Consec.</th><th>Fecha</th><th>Materia prima</th><th>Proveedor</th><th>Responsable</th>
+              <th class="num">Gr. ingresados</th><th class="num">Gr. productivos</th>
+              <th class="num">Rendim.</th><th class="num">% Pérdida</th><th class="num">Valor pérdida</th><th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorial"></tbody>
+        </table>
+        <div id="histVacio" class="empty" style="display:none;">Sin lotes registrados con estos filtros.</div>
+      </div>
+      <div class="detail-box" id="detalleBox">
+        <h2 id="detalleTitulo" style="font-size:15px;">Detalle</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Código</th><th>Artículo</th><th class="num">Cant.</th><th class="num">Peso unit.</th><th class="num">Peso total</th><th class="num">Valor total</th><th class="num">%REN</th></tr></thead>
+            <tbody id="detalleBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB: ESTÁNDARES ===================== -->
+  <section class="panel" id="panel-estandares">
+    <div class="card">
+      <h2>📏 Techos máximos de merma</h2>
+      <p class="card-sub">Cuando una merma registrada supera el techo, el lote se marca "Bajo estándar".</p>
+      <div class="row">
+        <div><label for="estProducto">Producto</label><select id="estProducto"></select></div>
+        <div><label for="estTecho">Techo de merma %</label><input id="estTecho" type="text" inputmode="decimal" value="0" /></div>
+      </div>
+      <button type="button" class="btn secondary" id="btnGuardarEstandar">+ Agregar / actualizar estándar</button>
+    </div>
+    <div class="card">
+      <h2 style="font-size:15px;">Estándares registrados</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Producto</th><th class="num">Techo de merma</th><th class="num">Rend. mínimo</th><th></th></tr></thead>
+          <tbody id="tablaEstandares"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB: MATRIZ DE CORTES ===================== -->
+  <section class="panel" id="panel-matrizcortes">
+    <div class="card">
+      <h2>🧩 Matriz de cortes por proteína</h2>
+      <p class="card-sub">Al elegir esta proteína en "Nuevo lote", sus cortes se cargan solos.</p>
+      <div class="row">
+        <div><label for="mcProducto">Proteína</label><select id="mcProducto"></select></div>
+        <div><label for="mcCodigo">Código (opcional)</label><input id="mcCodigo" type="text" placeholder="Ej. 1020071" /></div>
+        <div><label for="mcNombre">Nombre del corte</label><input id="mcNombre" type="text" placeholder="Ej. LOMO FINO X 200 GR" /></div>
+        <div><label for="mcPeso">Peso (g)</label><input id="mcPeso" type="text" inputmode="decimal" placeholder="Ej. 200" /></div>
+      </div>
+      <button type="button" class="btn secondary" id="btnAgregarCorte">+ Agregar corte al catálogo</button>
+    </div>
+    <div class="card">
+      <h2 id="mcTituloLista" style="font-size:15px;">Cortes registrados</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Código</th><th>Corte</th><th class="num">Peso (g)</th><th></th></tr></thead>
+          <tbody id="tablaCortes"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB: PROVEEDORES ===================== -->
+  <section class="panel" id="panel-proveedores">
+    <div class="card">
+      <h2>🚚 Proveedores</h2>
+      <p class="card-sub">Aparecen como lista desplegable al registrar un lote.</p>
+      <div class="row">
+        <div><label for="pvNombre">Nombre</label><input id="pvNombre" type="text" placeholder="Ej. Carnes del Valle S.A.S." /></div>
+        <div><label for="pvContacto">Contacto (opcional)</label><input id="pvContacto" type="text" placeholder="Teléfono, correo..." /></div>
+      </div>
+      <button type="button" class="btn secondary" id="btnAgregarProveedor">+ Agregar proveedor</button>
+    </div>
+    <div class="card">
+      <h2 style="font-size:15px;">Proveedores registrados</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Nombre</th><th>Contacto</th><th></th></tr></thead>
+          <tbody id="tablaProveedores"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB: DASHBOARD ===================== -->
+  <section class="panel" id="panel-dashboard">
+    <div class="card">
+      <div class="row" style="align-items:flex-end; margin-bottom:0;">
+        <div><label for="dashDesde">Desde</label><input id="dashDesde" type="date" /></div>
+        <div><label for="dashHasta">Hasta</label><input id="dashHasta" type="date" /></div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn secondary" id="btnDashFiltrar">Filtrar</button>
+          <button type="button" class="btn ghost" id="btnDashLimpiar" style="font-size:13px;">Últimos 90 días</button>
+        </div>
+      </div>
+    </div>
+    <div class="kpis" id="dashKpis"></div>
+    <div class="charts-grid" style="margin-top:14px;">
+      <div class="card">
+        <h2>Rendimiento por materia prima</h2>
+        <div class="barlist" id="barRendimiento"></div>
+      </div>
+      <div class="card">
+        <h2>% Participación de artículos producidos</h2>
+        <p class="card-sub">Peso de cada presentación sobre el total producido.</p>
+        <div class="donut-wrap">
+          <svg id="donutParticipacion" width="140" height="140" viewBox="0 0 150 150"></svg>
+          <div class="legend" id="legendParticipacion"></div>
+        </div>
+      </div>
+      <div class="card" style="grid-column: 1 / -1;">
+        <h2>Lotes con mayor % de pérdida</h2>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Fecha</th><th>Materia prima</th><th>Responsable</th><th class="num">% Pérdida</th><th class="num">Valor pérdida</th><th>Estado</th></tr></thead>
+            <tbody id="tablaRanking"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB: AYUDA ===================== -->
+  <section class="panel" id="panel-ayuda">
+    <div class="card">
+      <h2>📖 Instructivo</h2>
+      <p class="card-sub">Guía rápida de uso.</p>
+      <ol style="line-height:1.9; padding-left:20px; font-size:13.5px;">
+        <li><strong>Nuevo lote</strong>: elige la materia prima (los cortes se cargan solos), el proveedor, el precio de compra por kg y el peso porcionado. Digita solo las cantidades obtenidas de cada corte.</li>
+        <li>Anota las <strong>mermas líquidas</strong> y el <strong>desperdicio hueso/gordo</strong> — lo que sobre queda como "diferencia no identificada".</li>
+        <li>Revisa que la <strong>conciliación de factura</strong> dé $0 de diferencia y dale <strong>Guardar lote</strong>.</li>
+        <li><strong>Exportar PDF</strong> genera un documento de una sola hoja (con espacio para firmas) y <strong>Exportar Excel</strong> un CSV — ambos intentan abrir el panel de compartir (WhatsApp/correo) o descargar el archivo directo, según lo permita el celular o el navegador. <strong>📤 Compartir</strong> hace lo mismo con el PDF.</li>
+        <li><strong>Historial</strong>: consulta y filtra los lotes registrados en este dispositivo.</li>
+        <li><strong>Matriz de cortes</strong>, <strong>Estándares</strong> y <strong>Proveedores</strong>: catálogos que alimentan el formulario de "Nuevo lote" — ya vienen con los datos reales del Club, pero puedes ajustarlos aquí.</li>
+        <li><strong>Importante</strong>: todo lo que registres se guarda solo en <em>este</em> navegador/celular, no se comparte automáticamente con otros equipos. Si varias personas capturan lotes desde distintos dispositivos, cada uno tendrá su propio historial por separado.</li>
+      </ol>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ================= CATÁLOGO REAL — Club Lagos de Caujaral =================
+  // Datos base (valores por defecto la primera vez que se abre en un dispositivo).
+  // Todo queda editable desde Estándares / Matriz cortes / Proveedores, y lo editado
+  // se guarda en este navegador (localStorage).
+  const DEFAULT_MATERIA_PRIMA = [
+    { id: "mp01", nombre: "Bife de Chorizo", costo_kg: 0, activo: true },
+    { id: "mp02", nombre: "Bondiola de Cerdo", costo_kg: 0, activo: true },
+    { id: "mp03", nombre: "Camarón 51-60 Glaseado al 10%", costo_kg: 0, activo: true },
+    { id: "mp04", nombre: "Carne de Hamburguesa Angus", costo_kg: 43000, activo: true },
+    { id: "mp05", nombre: "Carne Molida Especial", costo_kg: 0, activo: true },
+    { id: "mp06", nombre: "Chicharrón", costo_kg: 0, activo: true },
+    { id: "mp07", nombre: "Denver", costo_kg: 96711, activo: true },
+    { id: "mp08", nombre: "Filete de Pechuga de Pollo", costo_kg: 19401, activo: true },
+    { id: "mp09", nombre: "Filete de Robalo", costo_kg: 0, activo: true },
+    { id: "mp10", nombre: "Langostino con Concha U15", costo_kg: 0, activo: true },
+    { id: "mp11", nombre: "Langostino U15", costo_kg: 0, activo: true },
+    { id: "mp12", nombre: "Lomo Ancho", costo_kg: 0, activo: true },
+    { id: "mp13", nombre: "Lomo Fino", costo_kg: 78000, activo: true },
+    { id: "mp14", nombre: "Lomo Fino Limpio", costo_kg: 0, activo: true },
+    { id: "mp15", nombre: "Mojarra Roja", costo_kg: 0, activo: true },
+    { id: "mp16", nombre: "Muslo Granel sin Rabadilla", costo_kg: 0, activo: true },
+    { id: "mp17", nombre: "New York Certified Angus Beef", costo_kg: 118000, activo: true },
+    { id: "mp18", nombre: "New York Roll Select", costo_kg: 0, activo: true },
+    { id: "mp19", nombre: "Picaña Certified", costo_kg: 90000, activo: true },
+    { id: "mp20", nombre: "Picaña Chop House", costo_kg: 72400, activo: true },
+    { id: "mp21", nombre: "Pulpa de Cerdo Relajada Limpia", costo_kg: 0, activo: true },
+    { id: "mp22", nombre: "Pulpo Mexicano", costo_kg: 0, activo: true },
+    { id: "mp23", nombre: "Punta de Anca Americana", costo_kg: 64000, activo: true },
+    { id: "mp24", nombre: "Punta Gorda", costo_kg: 0, activo: true },
+    { id: "mp25", nombre: "Salmón", costo_kg: 0, activo: true },
+    { id: "mp26", nombre: "Tetafula", costo_kg: 0, activo: true },
+    { id: "mp27", nombre: "Tilapia Fresca Nacional", costo_kg: 0, activo: true },
+    { id: "mp28", nombre: "Ribeye Certified Angus Beef", costo_kg: 148000, activo: true },
+    { id: "mp29", nombre: "Costilla de Cerdo San Luis", costo_kg: 0, activo: true },
+    { id: "mp30", nombre: "Tomahawk de Cerdo", costo_kg: 0, activo: true },
+    { id: "mp31", nombre: "Alas de Pollo", costo_kg: 0, activo: true },
+  ];
+
+  const DEFAULT_PROVEEDORES = [
+    { id: "pv01", nombre: "Finca Don Pedro", contacto: "NIT 901042922", activo: true },
+    { id: "pv02", nombre: "Puropollo", contacto: "NIT 890104719", activo: true },
+    { id: "pv03", nombre: "Agrodex", contacto: "NIT 802015298", activo: true },
+    { id: "pv04", nombre: "Carnes Santa Cruz", contacto: "NIT 900326452", activo: true },
+    { id: "pv05", nombre: "Antillana", contacto: "NIT 800034825", activo: true },
+    { id: "pv06", nombre: "Atlantic", contacto: "NIT 900040299", activo: true },
+    { id: "pv07", nombre: "Ricardo Mercado", contacto: "CC 3745971", activo: true },
+    { id: "pv08", nombre: "Jose Castro", contacto: "CC 72289100", activo: true },
+    { id: "pv09", nombre: "Sir Compani", contacto: "NIT 901159382", activo: true },
+    { id: "pv10", nombre: "Cama Guey", contacto: "", activo: true },
+    { id: "pv11", nombre: "Costacarnica", contacto: "", activo: true },
+    { id: "pv12", nombre: "Carnes y Carnes", contacto: "", activo: true },
+    { id: "pv13", nombre: "Las Perfecta", contacto: "", activo: true },
+    { id: "pv14", nombre: "Castromar", contacto: "", activo: true },
+    { id: "pv15", nombre: "Ancla y Viento", contacto: "", activo: true },
+    { id: "pv16", nombre: "El Gran Langostino", contacto: "", activo: true },
+    { id: "pv17", nombre: "Centurion", contacto: "", activo: true },
+    { id: "pv18", nombre: "Comercial + Bios SAS", contacto: "", activo: true },
+  ];
+
+  const MATRIZ_CORTES_RAW = {
+    mp01: [{ codigo: "", nombre: "Bife de Chorizo", pesoG: 300 }],
+    mp02: [
+      { codigo: "", nombre: "Bondiola de Cerdo x250", pesoG: 250 },
+      { codigo: "", nombre: "Recorte de Bondiola", pesoG: 1000 },
+    ],
+    mp03: [{ codigo: "", nombre: "Camarón Arroz", pesoG: 200 }],
+    mp04: [
+      { codigo: "", nombre: "Carne de Hamburguesa Angus x150", pesoG: 150 },
+      { codigo: "", nombre: "Carne de Hamburguesa Angus x100", pesoG: 100 },
+      { codigo: "", nombre: "Albóndigas x200 GR", pesoG: 200 },
+    ],
+    mp05: [],
+    mp06: [{ codigo: "", nombre: "Chicharrón x500", pesoG: 500 }],
+    mp07: [{ codigo: "", nombre: "Denver", pesoG: 400 }],
+    mp08: [
+      { codigo: "", nombre: "Pechuga de Pollo x250", pesoG: 250 },
+      { codigo: "", nombre: "Pechuga de Pollo x150", pesoG: 150 },
+      { codigo: "", nombre: "Picada de Pollo x300", pesoG: 300 },
+      { codigo: "", nombre: "Pechuga Limpia", pesoG: 1000 },
+    ],
+    mp09: [
+      { codigo: "", nombre: "Robalo x250", pesoG: 250 },
+      { codigo: "", nombre: "Robalo x100", pesoG: 100 },
+      { codigo: "", nombre: "Cabeza de Pescado", pesoG: 1000 },
+    ],
+    mp10: [{ codigo: "", nombre: "Langostino con Concha U15", pesoG: 240 }],
+    mp11: [
+      { codigo: "", nombre: "Langostino U15 (270g)", pesoG: 270 },
+      { codigo: "", nombre: "Langostino U15 (180g)", pesoG: 180 },
+    ],
+    mp12: [
+      { codigo: "", nombre: "Lomo Ancho x125", pesoG: 125 },
+      { codigo: "", nombre: "Lomo Ancho x300", pesoG: 300 },
+      { codigo: "", nombre: "Recorte de Lomo Ancho", pesoG: 1000 },
+    ],
+    mp13: [
+      { codigo: "", nombre: "Lomo Fino x250", pesoG: 250 },
+      { codigo: "", nombre: "Lomo Fino x150", pesoG: 150 },
+      { codigo: "", nombre: "Picada de Lomo x300", pesoG: 300 },
+      { codigo: "", nombre: "Recorte de Lomo Fino", pesoG: 1000 },
+    ],
+    mp14: [{ codigo: "", nombre: "Roast Beef", pesoG: 80 }],
+    mp15: [{ codigo: "", nombre: "Mojarra (und.)", pesoG: 515 }],
+    mp16: [
+      { codigo: "", nombre: "Pierna Pernil Deshuesada", pesoG: 300 },
+      { codigo: "", nombre: "Hueso", pesoG: 1000 },
+      { codigo: "", nombre: "Recorte", pesoG: 1000 },
+    ],
+    mp17: [{ codigo: "", nombre: "New York Certificado", pesoG: 350 }],
+    mp18: [],
+    mp19: [{ codigo: "", nombre: "Picaña", pesoG: 350 }],
+    mp20: [{ codigo: "", nombre: "Picaña", pesoG: 350 }],
+    mp21: [
+      { codigo: "", nombre: "Pulpa de Cerdo", pesoG: 150 },
+      { codigo: "", nombre: "Recorte Pulpa de Cerdo", pesoG: 1000 },
+    ],
+    mp22: [{ codigo: "", nombre: "Pulpo", pesoG: 150 }],
+    mp23: [
+      { codigo: "1020071", nombre: "Punta de Anca x 300 GR", pesoG: 300 },
+      { codigo: "1020072", nombre: "Punta de Anca x 150 GR", pesoG: 150 },
+      { codigo: "1020074", nombre: "Picada de Picaña x 150 GR (recorte)", pesoG: 150 },
+    ],
+    mp24: [
+      { codigo: "", nombre: "Punta Gorda x300", pesoG: 300 },
+      { codigo: "", nombre: "Recorte de Punta Gorda", pesoG: 1000 },
+    ],
+    mp25: [
+      { codigo: "", nombre: "Salmón x250", pesoG: 250 },
+      { codigo: "", nombre: "Salmón x125", pesoG: 125 },
+      { codigo: "", nombre: "Salmón x100", pesoG: 100 },
+      { codigo: "", nombre: "Recorte de Salmón", pesoG: 1000 },
+    ],
+    mp26: [
+      { codigo: "", nombre: "Tetafula x125", pesoG: 125 },
+      { codigo: "", nombre: "Recorte de Tetafula", pesoG: 1000 },
+    ],
+    mp27: [{ codigo: "", nombre: "Tilapia", pesoG: 100 }],
+    mp28: [
+      { codigo: "", nombre: "Ribeye Certified", pesoG: 350 },
+      { codigo: "", nombre: "Ribeye Nacional", pesoG: 150 },
+    ],
+    mp29: [
+      { codigo: "", nombre: "Costilla de Cerdo San Luis", pesoG: 200 },
+      { codigo: "", nombre: "Recorte de Costilla de Cerdo", pesoG: 1000 },
+    ],
+    mp30: [{ codigo: "", nombre: "Tomahawk de Cerdo", pesoG: 350 }],
+    mp31: [],
+  };
+  const DEFAULT_CORTES = [];
+  Object.keys(MATRIZ_CORTES_RAW).forEach((productoId) => {
+    MATRIZ_CORTES_RAW[productoId].forEach((corte, i) => {
+      DEFAULT_CORTES.push({ id: `${productoId}-${i}`, materiaPrimaId: productoId, codigo: corte.codigo, nombre: corte.nombre, pesoG: corte.pesoG });
+    });
+  });
+
+  const DEFAULT_ESTANDARES = [
+    { id: "mp01", techoMermaPct: 10 }, { id: "mp02", techoMermaPct: 20 }, { id: "mp03", techoMermaPct: 5 },
+    { id: "mp04", techoMermaPct: 5 }, { id: "mp05", techoMermaPct: 5 }, { id: "mp06", techoMermaPct: 8 },
+    { id: "mp07", techoMermaPct: 5 }, { id: "mp08", techoMermaPct: 5 }, { id: "mp09", techoMermaPct: 10 },
+    { id: "mp10", techoMermaPct: 20 }, { id: "mp11", techoMermaPct: 0 }, { id: "mp12", techoMermaPct: 10 },
+    { id: "mp13", techoMermaPct: 10 }, { id: "mp14", techoMermaPct: 40 }, { id: "mp15", techoMermaPct: 5 },
+    { id: "mp16", techoMermaPct: 0 }, { id: "mp17", techoMermaPct: 10 }, { id: "mp18", techoMermaPct: 0 },
+    { id: "mp19", techoMermaPct: 20 }, { id: "mp20", techoMermaPct: 0 }, { id: "mp21", techoMermaPct: 10 },
+    { id: "mp22", techoMermaPct: 70 }, { id: "mp23", techoMermaPct: 15 }, { id: "mp24", techoMermaPct: 10 },
+    { id: "mp25", techoMermaPct: 5 }, { id: "mp26", techoMermaPct: 5 }, { id: "mp27", techoMermaPct: 10 },
+  ];
+
+  // ================= PERSISTENCIA LOCAL (localStorage de este dispositivo) =================
+  const LS_PREFIX = "porcionamientosCaujaral.";
+  function loadStore(key, defaults) {
+    try {
+      const raw = localStorage.getItem(LS_PREFIX + key);
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    saveStore(key, defaults);
+    return JSON.parse(JSON.stringify(defaults));
+  }
+  function saveStore(key, data) {
+    try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(data)); } catch (e) {}
+  }
+
+  let materiaPrimaCatalogo = [];
+  let proveedoresCatalogo = [];
+  let cortesCatalogo = [];
+  let estandaresCatalogo = [];
+  let lotesCatalogo = [];
+
+  function cargarTodo() {
+    materiaPrimaCatalogo = loadStore("materiaPrima", DEFAULT_MATERIA_PRIMA).filter((x) => x.activo !== false);
+    proveedoresCatalogo = loadStore("proveedores", DEFAULT_PROVEEDORES).filter((x) => x.activo !== false);
+    cortesCatalogo = loadStore("cortes", DEFAULT_CORTES);
+    estandaresCatalogo = loadStore("estandares", DEFAULT_ESTANDARES);
+    lotesCatalogo = loadStore("lotes", []);
+  }
+
+  function cortesDeProteina(materiaPrimaId) {
+    return cortesCatalogo.filter((c) => c.materiaPrimaId === materiaPrimaId);
+  }
+  function nombreMateriaPrima(id) {
+    const m = materiaPrimaCatalogo.find((x) => x.id === id);
+    return m ? m.nombre : "—";
+  }
+
+  // ================= IDENTIFICACIÓN LIGERA (quién registra) =================
+  function nombreUsuarioActual() {
+    return localStorage.getItem(LS_PREFIX + "nombreUsuario") || "";
+  }
+  function pedirNombre(forzar) {
+    return new Promise((resolve) => {
+      const actual = nombreUsuarioActual();
+      if (actual && !forzar) { resolve(actual); return; }
+      const backdrop = document.createElement("div");
+      backdrop.className = "modal-backdrop";
+      backdrop.innerHTML = `
+        <div class="modal-card">
+          <h2>¿Cómo te llamas?</h2>
+          <p style="color:var(--text-muted); font-size:13px;">Se usa para identificar quién registró cada lote.</p>
+          <input id="modalNombreInput" type="text" placeholder="Tu nombre" style="margin-bottom:14px;" value="${actual}" />
+          <button type="button" class="btn" style="width:100%;" id="modalNombreBtn">Continuar</button>
+        </div>`;
+      document.body.appendChild(backdrop);
+      const input = backdrop.querySelector("#modalNombreInput");
+      input.focus();
+      const confirmar = () => {
+        const v = input.value.trim();
+        if (!v) return;
+        localStorage.setItem(LS_PREFIX + "nombreUsuario", v);
+        backdrop.remove();
+        renderQuienSoy();
+        resolve(v);
+      };
+      backdrop.querySelector("#modalNombreBtn").addEventListener("click", confirmar);
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") confirmar(); });
+    });
+  }
+  function renderQuienSoy() {
+    const el = document.getElementById("quienSoyBox");
+    const nombre = nombreUsuarioActual();
+    el.innerHTML = nombre
+      ? `Hola, <strong>${nombre}</strong> · <button id="btnCambiarNombre" type="button">cambiar</button>`
+      : `<button id="btnCambiarNombre" type="button">Identificarme</button>`;
+    document.getElementById("btnCambiarNombre").addEventListener("click", () => pedirNombre(true));
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  function money(v) { return "$" + Math.round(v || 0).toLocaleString("es-CO"); }
+  function gramos(v) { return Math.round(v || 0).toLocaleString("es-CO") + " g"; }
+  function parseDecimal(str) {
+    const v = parseFloat(String(str).trim().replace(",", "."));
+    return isNaN(v) ? 0 : v;
+  }
+  function nuevoId() {
+    return (crypto.randomUUID ? crypto.randomUUID() : "id-" + Date.now() + "-" + Math.random().toString(36).slice(2));
+  }
+
+  // ================= NUEVO LOTE =================
+  function renderSelectMateriaPrima(el) {
+    const actual = el.value;
+    el.innerHTML = materiaPrimaCatalogo.length
+      ? materiaPrimaCatalogo.map((m) => `<option value="${m.id}">${m.nombre}</option>`).join("")
+      : `<option value="">Sin materia prima — créala en "Matriz cortes"</option>`;
+    if ([...el.options].some((o) => o.value === actual)) el.value = actual;
+  }
+  function renderSelectProveedores() {
+    const el = document.getElementById("inProveedor");
+    const actual = el.value;
+    el.innerHTML = `<option value="">Sin especificar</option>` + proveedoresCatalogo.map((p) => `<option value="${p.id}">${p.nombre}</option>`).join("");
+    if ([...el.options].some((o) => o.value === actual)) el.value = actual;
+  }
+  function updatePrecioSugerido() {
+    const mp = materiaPrimaCatalogo.find((m) => m.id === document.getElementById("inProducto").value);
+    if (mp && !document.getElementById("inPrecio").dataset.tocado) document.getElementById("inPrecio").value = mp.costo_kg || 0;
+  }
+  function opcionesArticulos(cortes, idSel) {
+    if (!cortes.length) return `<option value="">Sin cortes definidos</option>`;
+    return cortes.map((c) => `<option value="${c.id}" ${c.id === idSel ? "selected" : ""}>${c.nombre}</option>`).join("");
+  }
+  function agregarFila(prefill) {
+    const productoId = document.getElementById("inProducto").value;
+    const cortes = cortesDeProteina(productoId);
+    if (!cortes.length) { showToast('Esta materia prima no tiene cortes en "Matriz de cortes" todavía.'); return; }
+    const tbody = document.getElementById("filasArticulos");
+    const tr = document.createElement("tr");
+    if (prefill) {
+      const art = cortes.find((c) => c.id === prefill.id) || cortes[0];
+      tr.innerHTML = `
+        <td>${art.nombre}<input type="hidden" class="f-id" value="${art.id}" /></td>
+        <td class="num">${art.pesoG} g<input type="hidden" class="f-peso" value="${art.pesoG}" /></td>
+        <td class="num"><input class="f-cant" type="text" inputmode="numeric" value="${prefill.cantidad ? prefill.cantidad : ""}" /></td>
+        <td class="num f-pesoTotal">0 g</td>
+        <td class="num f-valorUnidad">$0</td>
+        <td class="num f-valorTotal">$0</td>
+        <td class="num f-pctRen">0%</td>
+        <td><button type="button" class="btn ghost">Quitar</button></td>`;
+    } else {
+      const art = cortes[0];
+      tr.innerHTML = `
+        <td><select class="f-art">${opcionesArticulos(cortes, art.id)}</select></td>
+        <td class="num"><span class="f-peso-label">${art.pesoG} g</span><input type="hidden" class="f-peso" value="${art.pesoG}" /></td>
+        <td class="num"><input class="f-cant" type="text" inputmode="numeric" value="" /></td>
+        <td class="num f-pesoTotal">0 g</td>
+        <td class="num f-valorUnidad">$0</td>
+        <td class="num f-valorTotal">$0</td>
+        <td class="num f-pctRen">0%</td>
+        <td><button type="button" class="btn ghost">Quitar</button></td>`;
+      tr.querySelector(".f-art").addEventListener("change", (e) => {
+        const a = cortes.find((x) => x.id === e.target.value);
+        if (a) { tr.querySelector(".f-peso").value = a.pesoG; tr.querySelector(".f-peso-label").textContent = a.pesoG + " g"; }
+        recalcularForm();
+      });
+    }
+    tbody.appendChild(tr);
+    tr.querySelector(".f-cant").addEventListener("input", recalcularForm);
+    tr.querySelector(".btn.ghost").addEventListener("click", () => { tr.remove(); recalcularForm(); });
+  }
+  function cargarCortesAutomaticos() {
+    const productoId = document.getElementById("inProducto").value;
+    const cortes = cortesDeProteina(productoId);
+    document.getElementById("filasArticulos").innerHTML = "";
+    if (!cortes.length) { showToast('Esta materia prima no tiene cortes — agrégalos en "Matriz cortes".'); recalcularForm(); return; }
+    cortes.forEach((c) => agregarFila({ id: c.id, pesoG: c.pesoG }));
+    recalcularForm();
+  }
+  function leerLoteDesdeForm() {
+    const mp = materiaPrimaCatalogo.find((m) => m.id === document.getElementById("inProducto").value);
+    return {
+      productoId: mp ? mp.id : null,
+      precioKg: parseDecimal(document.getElementById("inPrecio").value),
+      pesoPorcionado: parseDecimal(document.getElementById("inPeso").value),
+      mermaLiquidosG: parseDecimal(document.getElementById("inMermaLiquidos").value),
+      mermaHuesoGordoG: parseDecimal(document.getElementById("inMermaHuesoGordo").value),
+      articulos: [...document.querySelectorAll("#filasArticulos tr")].map((tr) => {
+        const selectEl = tr.querySelector(".f-art");
+        const idEl = tr.querySelector(".f-id");
+        return {
+          id: selectEl ? selectEl.value : idEl.value,
+          cantidad: parseDecimal(tr.querySelector(".f-cant").value),
+          pesoG: parseDecimal(tr.querySelector(".f-peso").value),
+        };
+      }),
+    };
+  }
+  function calcularLoteCompleto(lote) {
+    const gramosIngresados = lote.pesoPorcionado * 1000;
+    const valorFactura = lote.precioKg * lote.pesoPorcionado;
+    const filas = lote.articulos.map((a) => ({ ...a, pesoTotalG: a.cantidad * a.pesoG }));
+    const gramosProductivos = filas.reduce((s, f) => s + f.pesoTotalG, 0);
+    const costoPorGramo = gramosProductivos > 0 ? valorFactura / gramosProductivos : 0;
+    filas.forEach((f) => {
+      f.valorFinal = f.pesoTotalG * costoPorGramo;
+      f.valorUnidadFinal = f.cantidad > 0 ? f.valorFinal / f.cantidad : 0;
+      f.pctRen = gramosIngresados > 0 ? (f.pesoTotalG / gramosIngresados) * 100 : 0;
+    });
+    const subtotalProductivo = filas.reduce((s, f) => s + f.pesoTotalG * costoPorGramo, 0);
+    const valorAbsorbido = filas.reduce((s, f) => s + f.valorFinal, 0);
+    const diferenciaValor = subtotalProductivo - valorAbsorbido;
+    const mermaLiquidosG = lote.mermaLiquidosG || 0;
+    const mermaHuesoGordoG = lote.mermaHuesoGordoG || 0;
+    const gramosExplicados = gramosProductivos + mermaLiquidosG + mermaHuesoGordoG;
+    const gramosSinExplicar = gramosIngresados - gramosExplicados;
+    const totalPerdidaG = gramosIngresados - gramosProductivos;
+    const valorPerdida = totalPerdidaG * costoPorGramo;
+    const rendimiento = gramosIngresados > 0 ? (gramosProductivos / gramosIngresados) * 100 : 0;
+    const pctPerdida = 100 - rendimiento;
+    return { filas, gramosIngresados, valorFactura, gramosProductivos, costoPorGramo, subtotalProductivo, valorAbsorbido, diferenciaValor, mermaLiquidosG, mermaHuesoGordoG, gramosExplicados, gramosSinExplicar, totalPerdidaG, valorPerdida, rendimiento, pctPerdida };
+  }
+  function recalcularForm() {
+    const lote = leerLoteDesdeForm();
+    const c = calcularLoteCompleto(lote);
+    [...document.querySelectorAll("#filasArticulos tr")].forEach((tr, i) => {
+      const f = c.filas[i];
+      tr.querySelector(".f-pesoTotal").textContent = gramos(f.pesoTotalG);
+      tr.querySelector(".f-valorUnidad").textContent = money(f.valorUnidadFinal);
+      tr.querySelector(".f-valorTotal").textContent = money(f.valorFinal);
+      tr.querySelector(".f-pctRen").textContent = f.pctRen.toFixed(1) + "%";
+    });
+    document.getElementById("inDifNoIdentificada").value = gramos(c.gramosSinExplicar);
+    document.getElementById("rcValorFactura").textContent = money(c.valorFactura);
+    document.getElementById("rcValorAbsorbido").textContent = money(c.valorAbsorbido);
+    document.getElementById("rcDiferencia").textContent = money(c.diferenciaValor);
+    document.getElementById("rcDiferenciaBox").className = "recon-item " + (Math.abs(c.diferenciaValor) < 1 ? "ok" : "bad");
+    document.getElementById("rcGramosIngresados").textContent = gramos(c.gramosIngresados);
+    document.getElementById("rcGramosExplicados").textContent = gramos(c.gramosExplicados);
+    document.getElementById("rcGramosSinExplicar").textContent = gramos(c.gramosSinExplicar);
+    document.getElementById("rcSinExplicarBox").className = "recon-item " + (Math.abs(c.gramosSinExplicar) < 1 ? "ok" : c.gramosSinExplicar > 0 ? "warn" : "bad");
+    document.getElementById("kpiGramosProductivos").textContent = gramos(c.gramosProductivos);
+    document.getElementById("kpiCostoGramo").textContent = "$" + c.costoPorGramo.toFixed(2) + " /g";
+    document.getElementById("kpiPerdidaG").textContent = gramos(c.totalPerdidaG);
+    document.getElementById("kpiValorPerdida").textContent = money(c.valorPerdida);
+    document.getElementById("kpiRendimiento").textContent = c.gramosIngresados > 0 ? c.rendimiento.toFixed(1) + "%" : "—";
+    document.getElementById("kpiMerma").textContent = c.gramosIngresados > 0 ? c.pctPerdida.toFixed(1) + "%" : "—";
+    const estandar = estandaresCatalogo.find((e) => e.id === lote.productoId);
+    const kpiEstadoEl = document.getElementById("kpiEstado");
+    if (!estandar || c.gramosIngresados === 0) kpiEstadoEl.textContent = "Sin estándar";
+    else {
+      const rendMin = 100 - estandar.techoMermaPct;
+      kpiEstadoEl.textContent = c.rendimiento >= rendMin ? "✅ Dentro del estándar" : `❌ Bajo estándar (mín ${rendMin}%)`;
+    }
+  }
+
+  document.getElementById("inProducto").addEventListener("change", () => { updatePrecioSugerido(); cargarCortesAutomaticos(); });
+  document.getElementById("inPrecio").addEventListener("input", (e) => { e.target.dataset.tocado = "1"; recalcularForm(); });
+  document.getElementById("inPeso").addEventListener("input", recalcularForm);
+  document.getElementById("inMermaLiquidos").addEventListener("input", recalcularForm);
+  document.getElementById("inMermaHuesoGordo").addEventListener("input", recalcularForm);
+  document.getElementById("btnAgregarFila").addEventListener("click", () => agregarFila(null));
+
+  document.getElementById("btnGuardarLote").addEventListener("click", async () => {
+    const nombre = await pedirNombre(false);
+    const lote = leerLoteDesdeForm();
+    if (!lote.productoId || lote.pesoPorcionado <= 0) { showToast("Selecciona la materia prima e ingresa un peso porcionado mayor a cero."); return; }
+    const filasValidas = lote.articulos.filter((f) => f.cantidad > 0 && f.pesoG > 0);
+    if (!filasValidas.length) { showToast("Agrega al menos un artículo producido con cantidad mayor a cero."); return; }
+
+    const mp = materiaPrimaCatalogo.find((m) => m.id === lote.productoId);
+    const provSel = document.getElementById("inProveedor");
+    const provNombre = provSel.selectedOptions[0] && provSel.value ? provSel.selectedOptions[0].textContent : "";
+    const cortes = cortesDeProteina(lote.productoId);
+    const articulosGuardar = filasValidas.map((f) => {
+      const corte = cortes.find((c) => c.id === f.id);
+      return { codigo: corte ? corte.codigo : "", nombre: corte ? corte.nombre : "?", cantidad: f.cantidad, pesoG: f.pesoG };
+    });
+    const consecutivo = (lotesCatalogo.reduce((max, l) => Math.max(max, l.consecutivo || 0), 0)) + 1;
+    const doc = {
+      id: nuevoId(),
+      consecutivo,
+      fecha: document.getElementById("inFecha").value,
+      materiaPrimaId: lote.productoId,
+      materiaPrimaNombre: mp ? mp.nombre : "",
+      proveedorNombre: provNombre,
+      responsable: nombre,
+      precioKg: lote.precioKg,
+      pesoPorcionadoKg: lote.pesoPorcionado,
+      mermaLiquidosG: lote.mermaLiquidosG,
+      mermaHuesoGordoG: lote.mermaHuesoGordoG,
+      observaciones: document.getElementById("inObs").value.trim(),
+      articulos: articulosGuardar,
+      createdAt: new Date().toISOString(),
+    };
+    lotesCatalogo.push(doc);
+    saveStore("lotes", lotesCatalogo);
+    showToast("Lote guardado — consecutivo #" + consecutivo);
+    document.getElementById("inPeso").value = "";
+    document.getElementById("inPrecio").dataset.tocado = "";
+    document.getElementById("inMermaLiquidos").value = "0";
+    document.getElementById("inMermaHuesoGordo").value = "0";
+    document.getElementById("inObs").value = "";
+    cargarCortesAutomaticos();
+    updatePrecioSugerido();
+    document.querySelector('nav.tabs button[data-tab="historial"]').click();
+  });
+
+  // ================= EXPORTAR PDF (generado en el propio código) =================
+  function limpiarTextoPDF(str) {
+    return String(str === undefined || str === null ? "" : str)
+      .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{FE0F}]/gu, "")
+      .replace(/[^\x00-\xFF]/g, "");
+  }
+  function escaparPDF(str) { return limpiarTextoPDF(str).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)"); }
+  function colTexto(txt, ancho) {
+    txt = String(txt === undefined || txt === null ? "" : txt);
+    if (txt.length > ancho) return txt.slice(0, Math.max(0, ancho - 1)) + ".";
+    return txt.padEnd(ancho, " ");
+  }
+  function colNumero(txt, ancho) {
+    txt = String(txt);
+    return (txt.length > ancho ? txt.slice(0, ancho) : txt).padStart(ancho, " ");
+  }
+  function construirLineasPDF() {
+    const lote = leerLoteDesdeForm();
+    const mp = materiaPrimaCatalogo.find((m) => m.id === lote.productoId);
+    const c = calcularLoteCompleto(lote);
+    const provSel = document.getElementById("inProveedor");
+    const proveedor = provSel.selectedOptions[0] && provSel.value ? provSel.selectedOptions[0].textContent : "Sin especificar";
+    const fecha = document.getElementById("inFecha").value || "—";
+    const obs = document.getElementById("inObs").value.trim();
+    const L = [];
+    L.push({ text: "CLUB LAGOS DE CAUJARAL", size: 13 });
+    L.push({ text: "Analisis de Porcionamiento de Proteinas", size: 10 });
+    L.push({ text: "" });
+    L.push({ text: `Fecha: ${fecha}    Materia prima: ${mp ? mp.nombre : "-"}` });
+    L.push({ text: `Proveedor: ${proveedor}    Precio/kg: ${money(lote.precioKg)}` });
+    L.push({ text: `Peso porcionado: ${lote.pesoPorcionado} kg  (${gramos(c.gramosIngresados)})` });
+    L.push({ text: "" });
+    L.push({ text: "ARTICULOS PRODUCIDOS", size: 10 });
+    L.push({ text: colTexto("Articulo", 24) + colNumero("Peso u.", 9) + colNumero("Cant.", 7) + colNumero("Peso tot.", 12) + colNumero("Valor/u", 12) + colNumero("Valor tot.", 13) + colNumero("%REN", 7) });
+    L.push({ text: "-".repeat(84) });
+    const cortes = cortesDeProteina(lote.productoId);
+    c.filas.forEach((f) => {
+      const corte = cortes.find((a) => a.id === f.id);
+      L.push({ text: colTexto(corte ? corte.nombre : "?", 24) + colNumero(f.pesoG + "g", 9) + colNumero(f.cantidad, 7) + colNumero(gramos(f.pesoTotalG), 12) + colNumero(money(f.valorUnidadFinal), 12) + colNumero(money(f.valorFinal), 13) + colNumero(f.pctRen.toFixed(1) + "%", 7) });
+    });
+    L.push({ text: "" });
+    L.push({ text: "PERDIDAS Y MERMA", size: 10 });
+    L.push({ text: `Mermas liquidos: ${gramos(lote.mermaLiquidosG)}` });
+    L.push({ text: `Desperdicio hueso/gordo: ${gramos(lote.mermaHuesoGordoG)}` });
+    L.push({ text: `Diferencia no identificada: ${gramos(c.gramosSinExplicar)}` });
+    L.push({ text: "" });
+    L.push({ text: "CONCILIACION DE FACTURA", size: 10 });
+    L.push({ text: `Valor factura: ${money(c.valorFactura)}    Valor absorbido: ${money(c.valorAbsorbido)}    Diferencia: ${money(c.diferenciaValor)}` });
+    L.push({ text: `Gramos ingresados: ${gramos(c.gramosIngresados)}    Gramos explicados: ${gramos(c.gramosExplicados)}    Sin explicar: ${gramos(c.gramosSinExplicar)}` });
+    L.push({ text: "" });
+    L.push({ text: "RESULTADO DEL ANALISIS", size: 10 });
+    L.push({ text: `Gramos productivos: ${gramos(c.gramosProductivos)}    Costo por gramo: $${c.costoPorGramo.toFixed(2)}/g` });
+    L.push({ text: `Total perdida: ${gramos(c.totalPerdidaG)}    Valor perdida: ${money(c.valorPerdida)}` });
+    L.push({ text: `Rendimiento: ${c.rendimiento.toFixed(1)}%    % Perdida: ${c.pctPerdida.toFixed(1)}%` });
+    const estandar = estandaresCatalogo.find((e) => e.id === lote.productoId);
+    if (estandar && c.gramosIngresados > 0) {
+      const rendMin = 100 - estandar.techoMermaPct;
+      L.push({ text: `Estado vs. estandar: ${c.rendimiento >= rendMin ? "Dentro del estandar" : "Bajo estandar"} (minimo ${rendMin}%)` });
+    }
+    if (obs) { L.push({ text: "" }); L.push({ text: "Observaciones: " + obs }); }
+    L.push({ text: "" });
+    L.push({ text: "" });
+    L.push({ text: "_______________________        _______________________        _______________________" });
+    L.push({ text: "Porcionado por                  Elaborado por                   Verificado por" });
+    return L.map((l) => ({ text: escaparPDF(l.text), size: l.size || 8 }));
+  }
+  function construirPDF(paginas) {
+    const pageWidth = 595, pageHeight = 842, marginX = 40, topY = 800;
+    const catalogNum = 1, pagesNum = 2, fontNum = 3;
+    let nextObjNum = 4;
+    const pageObjNums = [], contentObjNums = [];
+    paginas.forEach(() => { pageObjNums.push(nextObjNum++); contentObjNums.push(nextObjNum++); });
+    function contentStream(lineas) {
+      let y = topY; let s = "BT\n";
+      lineas.forEach((l) => { s += `/F1 ${l.size} Tf\n1 0 0 1 ${marginX} ${y} Tm\n(${l.text}) Tj\n`; y -= l.size + 3; });
+      s += "ET"; return s;
+    }
+    const objs = {};
+    objs[catalogNum] = `<< /Type /Catalog /Pages ${pagesNum} 0 R >>`;
+    objs[pagesNum] = `<< /Type /Pages /Kids [${pageObjNums.map((n) => n + " 0 R").join(" ")}] /Count ${paginas.length} >>`;
+    objs[fontNum] = `<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>`;
+    paginas.forEach((lineas, i) => {
+      objs[pageObjNums[i]] = `<< /Type /Page /Parent ${pagesNum} 0 R /Resources << /Font << /F1 ${fontNum} 0 R >> >> /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Contents ${contentObjNums[i]} 0 R >>`;
+      objs[contentObjNums[i]] = { stream: contentStream(lineas) };
+    });
+    let pdf = "%PDF-1.4\n";
+    const offsets = {};
+    const total = nextObjNum;
+    for (let n = 1; n < total; n++) {
+      offsets[n] = pdf.length;
+      const body = objs[n];
+      if (typeof body === "string") pdf += `${n} 0 obj\n${body}\nendobj\n`;
+      else pdf += `${n} 0 obj\n<< /Length ${body.stream.length} >>\nstream\n${body.stream}\nendstream\nendobj\n`;
+    }
+    const xrefOffset = pdf.length;
+    pdf += `xref\n0 ${total}\n0000000000 65535 f \n`;
+    for (let n = 1; n < total; n++) pdf += `${String(offsets[n]).padStart(10, "0")} 00000 n \n`;
+    pdf += `trailer\n<< /Size ${total} /Root ${catalogNum} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+    return pdf;
+  }
+  let downloadsCap = null;
+  function descargarBlobComoArchivo(blob, nombreArchivo) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = nombreArchivo;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  async function compartirOdescargar(blob, nombreArchivo, mime, tipoLabel) {
+    // 1) Si el navegador soporta compartir archivos (celular, sobre https), abre el panel
+    //    nativo (WhatsApp, correo, Telegram...) directamente con el archivo adjunto.
+    const archivo = new File([blob], nombreArchivo, { type: mime });
+    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+      try {
+        await navigator.share({ files: [archivo], title: tipoLabel, text: tipoLabel + " — Club Lagos de Caujaral" });
+        showToast(tipoLabel + " compartido.");
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // el usuario cerró el panel de compartir
+      }
+    }
+    // 2) Si hay confirmación nativa de guardado disponible, úsala.
+    if (downloadsCap) {
+      try {
+        await downloadsCap.save({ filename: nombreArchivo, data: blob });
+        showToast(tipoLabel + " guardado.");
+        return;
+      } catch (err) {
+        if (err && err.code === "declined") return;
+      }
+    }
+    // 3) Descarga clásica del navegador. Dentro del visor de artifacts de Claude esto
+    //    nunca guarda nada (bloqueado por la plataforma) aunque no arroje ningún error —
+    //    por eso, si detectamos que corremos dentro de ese visor, ni lo intentamos.
+    if (typeof window.claude !== "undefined") {
+      showToast("Este enlace de Claude no permite guardar archivos. Abre el archivo .html directamente (fuera de claude.ai) para que esto funcione.");
+      return;
+    }
+    try {
+      descargarBlobComoArchivo(blob, nombreArchivo);
+      showToast(tipoLabel + " descargado.");
+    } catch (err) {
+      showToast("No se pudo guardar el archivo en este navegador.");
+    }
+  }
+  function construirBlobPDF() {
+    const lineas = construirLineasPDF();
+    const paginas = [];
+    for (let i = 0; i < lineas.length; i += 60) paginas.push(lineas.slice(i, i + 60));
+    if (!paginas.length) paginas.push([{ text: "Sin datos", size: 10 }]);
+    const pdfString = construirPDF(paginas);
+    const bytes = Uint8Array.from(pdfString, (ch) => ch.charCodeAt(0));
+    return new Blob([bytes], { type: "application/pdf" });
+  }
+  async function exportarPDFDelLote() {
+    const blob = construirBlobPDF();
+    const nombreArchivo = `analisis_porcionamiento_${document.getElementById("inFecha").value || "sin-fecha"}.pdf`;
+    await compartirOdescargar(blob, nombreArchivo, "application/pdf", "Análisis de porcionamiento (PDF)");
+  }
+  document.getElementById("btnExportarPDF").addEventListener("click", exportarPDFDelLote);
+  document.getElementById("btnCompartirLote").addEventListener("click", exportarPDFDelLote);
+
+  function csvEscape(valor) { return `"${String(valor === undefined || valor === null ? "" : valor).replace(/"/g, '""')}"`; }
+  document.getElementById("btnExportarExcel").addEventListener("click", async () => {
+    const lote = leerLoteDesdeForm();
+    const mp = materiaPrimaCatalogo.find((m) => m.id === lote.productoId);
+    const c = calcularLoteCompleto(lote);
+    const cortes = cortesDeProteina(lote.productoId);
+    const ahora = new Date();
+    const filas = [
+      [`Analisis de porcionamiento — Exportado el ${ahora.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "medium" })}`], [],
+      ["Materia prima", mp ? mp.nombre : "-"], ["Peso porcionado (kg)", lote.pesoPorcionado], ["Precio/kg", lote.precioKg],
+      ["Rendimiento %", c.rendimiento.toFixed(1)], ["% Perdida", c.pctPerdida.toFixed(1)], ["Valor perdida", c.valorPerdida], [],
+      ["Codigo", "Articulo", "Peso unit (g)", "Cantidad", "Peso total (g)", "Valor/unidad", "Valor total", "%REN"],
+    ];
+    c.filas.forEach((f) => {
+      const corte = cortes.find((a) => a.id === f.id);
+      filas.push([corte ? corte.codigo : "", corte ? corte.nombre : "", f.pesoG, f.cantidad, f.pesoTotalG.toFixed(0), f.valorUnidadFinal.toFixed(2), f.valorFinal.toFixed(2), f.pctRen.toFixed(1)]);
+    });
+    const csv = filas.map((fila) => fila.map(csvEscape).join(";")).join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    await compartirOdescargar(blob, `analisis_porcionamiento_${document.getElementById("inFecha").value || "sin-fecha"}.csv`, "text/csv", "Análisis de porcionamiento (Excel)");
+  });
+
+  // ================= HISTORIAL =================
+  let lotesActuales = [];
+  function pillPerdida(pct) {
+    if (pct <= 15) return `<span class="pill pill-ok">${pct.toFixed(1)}%</span>`;
+    if (pct <= 25) return `<span class="pill pill-warn">${pct.toFixed(1)}%</span>`;
+    return `<span class="pill pill-bad">${pct.toFixed(1)}%</span>`;
+  }
+  function badgeEstado(estado) {
+    if (estado === "ok") return `<span class="pill pill-ok">Dentro del estándar</span>`;
+    if (estado === "bajo") return `<span class="pill pill-bad">Bajo estándar</span>`;
+    return `<span class="pill">Sin estándar</span>`;
+  }
+  function calcularHistorialFila(l) {
+    const c = calcularLoteCompleto({
+      productoId: l.materiaPrimaId, precioKg: l.precioKg, pesoPorcionado: l.pesoPorcionadoKg,
+      mermaLiquidosG: l.mermaLiquidosG, mermaHuesoGordoG: l.mermaHuesoGordoG,
+      articulos: l.articulos.map((a) => ({ id: a.codigo || a.nombre, cantidad: a.cantidad, pesoG: a.pesoG })),
+    });
+    const estandar = estandaresCatalogo.find((e) => e.id === l.materiaPrimaId);
+    let estado = null;
+    if (estandar) { const rendMin = 100 - estandar.techoMermaPct; estado = c.rendimiento >= rendMin ? "ok" : "bajo"; }
+    return { ...c, estado };
+  }
+  function filtrarLotes() {
+    const desde = document.getElementById("histDesde").value;
+    const hasta = document.getElementById("histHasta").value;
+    return lotesCatalogo.filter((l) => (!desde || l.fecha >= desde) && (!hasta || l.fecha <= hasta));
+  }
+  function renderResumen(rows) {
+    const el = document.getElementById("resumen");
+    if (!rows.length) { el.innerHTML = ""; return; }
+    let totalIng = 0, totalProd = 0, totalPerdida = 0;
+    rows.forEach((r) => { const c = calcularHistorialFila(r); totalIng += c.gramosIngresados; totalProd += c.gramosProductivos; totalPerdida += c.valorPerdida; });
+    const rend = totalIng > 0 ? (totalProd / totalIng) * 100 : 0;
+    el.innerHTML = `
+      <div class="kpi"><div class="k-label">Lotes</div><div class="k-value">${rows.length}</div></div>
+      <div class="kpi"><div class="k-label">Peso porcionado</div><div class="k-value">${(totalIng / 1000).toFixed(1)} kg</div></div>
+      <div class="kpi"><div class="k-label">Rendimiento prom.</div><div class="k-value">${rend.toFixed(1)}%</div></div>
+      <div class="kpi"><div class="k-label">Valor pérdida</div><div class="k-value">${money(totalPerdida)}</div></div>`;
+  }
+  function renderHistorial() {
+    lotesActuales = filtrarLotes().sort((a, b) => (b.consecutivo || 0) - (a.consecutivo || 0));
+    const body = document.getElementById("tablaHistorial");
+    const vacio = document.getElementById("histVacio");
+    document.getElementById("detalleBox").classList.remove("show");
+    if (!lotesActuales.length) { body.innerHTML = ""; vacio.style.display = "block"; renderResumen([]); return; }
+    vacio.style.display = "none";
+    body.innerHTML = lotesActuales.map((l, idx) => {
+      const c = calcularHistorialFila(l);
+      return `<tr class="clickable" data-idx="${idx}">
+        <td class="num">${l.consecutivo}</td><td>${l.fecha}</td><td>${l.materiaPrimaNombre}</td>
+        <td>${l.proveedorNombre || "—"}</td><td>${l.responsable || "—"}</td>
+        <td class="num">${gramos(c.gramosIngresados)}</td><td class="num">${gramos(c.gramosProductivos)}</td>
+        <td class="num">${c.rendimiento.toFixed(1)}%</td><td class="num">${pillPerdida(c.pctPerdida)}</td>
+        <td class="num">${money(c.valorPerdida)}</td><td>${badgeEstado(c.estado)}</td>
+      </tr>`;
+    }).join("");
+    body.querySelectorAll("tr.clickable").forEach((tr) => tr.addEventListener("click", () => verDetalle(Number(tr.dataset.idx))));
+    renderResumen(lotesActuales);
+  }
+  function verDetalle(idx) {
+    const l = lotesActuales[idx];
+    const c = calcularHistorialFila(l);
+    document.getElementById("detalleTitulo").textContent = `Detalle — ${l.materiaPrimaNombre} (${l.fecha})`;
+    document.getElementById("detalleBody").innerHTML = c.filas.map((f, i) => {
+      const a = l.articulos[i];
+      return `<tr><td>${a.codigo || "—"}</td><td>${a.nombre}</td><td class="num">${a.cantidad}</td>
+        <td class="num">${a.pesoG.toFixed(0)} g</td><td class="num">${gramos(f.pesoTotalG)}</td>
+        <td class="num">${money(f.valorFinal)}</td><td class="num">${f.pctRen.toFixed(1)}%</td></tr>`;
+    }).join("");
+    document.getElementById("detalleBox").classList.add("show");
+    document.getElementById("detalleBox").scrollIntoView({ behavior: "smooth" });
+  }
+  document.getElementById("btnHistFiltrar").addEventListener("click", renderHistorial);
+  document.getElementById("btnHistLimpiar").addEventListener("click", () => {
+    document.getElementById("histDesde").value = ""; document.getElementById("histHasta").value = ""; renderHistorial();
+  });
+  document.getElementById("btnCompartir").addEventListener("click", async () => {
+    if (!lotesActuales.length) { showToast("No hay lotes para compartir con estos filtros."); return; }
+    const ahora = new Date();
+    const filas = [
+      [`Historial de porcionamiento — Exportado el ${ahora.toLocaleString("es-CO", { dateStyle: "short", timeStyle: "medium" })}`], [],
+      ["Consecutivo", "Fecha", "Materia prima", "Proveedor", "Responsable", "Gramos ingresados", "Gramos productivos", "% Rendimiento", "% Pérdida", "Valor pérdida", "Estado"],
+    ];
+    lotesActuales.forEach((l) => {
+      const c = calcularHistorialFila(l);
+      filas.push([l.consecutivo, l.fecha, l.materiaPrimaNombre, l.proveedorNombre || "", l.responsable || "", c.gramosIngresados, c.gramosProductivos, c.rendimiento.toFixed(1), c.pctPerdida.toFixed(1), c.valorPerdida, c.estado === "ok" ? "Dentro del estándar" : c.estado === "bajo" ? "Bajo estándar" : "Sin estándar"]);
+    });
+    const csv = filas.map((fila) => fila.map(csvEscape).join(";")).join("\r\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    await compartirOdescargar(blob, `historial_porcionamiento_${ahora.toISOString().slice(0, 10)}.csv`, "text/csv", "Historial de porcionamiento");
+  });
+
+  // ================= MATRIZ DE CORTES =================
+  function renderTablaCortes() {
+    const productoId = document.getElementById("mcProducto").value;
+    document.getElementById("mcTituloLista").textContent = "Cortes de " + nombreMateriaPrima(productoId);
+    const cortes = cortesDeProteina(productoId);
+    document.getElementById("tablaCortes").innerHTML = cortes.length
+      ? cortes.map((c) => `<tr><td>${c.codigo || "—"}</td><td>${c.nombre}</td><td class="num">${c.pesoG} g</td>
+          <td><button type="button" class="btn ghost" onclick="quitarCorte('${c.id}')">Quitar</button></td></tr>`).join("")
+      : `<tr><td colspan="4" class="empty">Sin cortes registrados para esta proteína.</td></tr>`;
+  }
+  function quitarCorte(id) {
+    cortesCatalogo = cortesCatalogo.filter((c) => c.id !== id);
+    saveStore("cortes", cortesCatalogo);
+    renderTablaCortes();
+  }
+  document.getElementById("mcProducto").addEventListener("change", renderTablaCortes);
+  document.getElementById("btnAgregarCorte").addEventListener("click", () => {
+    const productoId = document.getElementById("mcProducto").value;
+    const nombre = document.getElementById("mcNombre").value.trim();
+    const pesoG = parseDecimal(document.getElementById("mcPeso").value);
+    const codigo = document.getElementById("mcCodigo").value.trim();
+    if (!productoId || !nombre || pesoG <= 0) { showToast("Ingresa el nombre y el peso del corte."); return; }
+    cortesCatalogo.push({ id: nuevoId(), materiaPrimaId: productoId, codigo, nombre, pesoG });
+    saveStore("cortes", cortesCatalogo);
+    document.getElementById("mcCodigo").value = ""; document.getElementById("mcNombre").value = ""; document.getElementById("mcPeso").value = "";
+    renderTablaCortes();
+    showToast("Corte agregado.");
+  });
+
+  // ================= ESTÁNDARES =================
+  function renderTablaEstandares() {
+    document.getElementById("tablaEstandares").innerHTML = estandaresCatalogo.length
+      ? estandaresCatalogo.map((e) => {
+          const rendMin = 100 - e.techoMermaPct;
+          return `<tr><td>${nombreMateriaPrima(e.id)}</td><td class="num">${e.techoMermaPct}%</td><td class="num">${rendMin}%</td>
+            <td><button type="button" class="btn ghost" onclick="quitarEstandar('${e.id}')">Quitar</button></td></tr>`;
+        }).join("")
+      : `<tr><td colspan="4" class="empty">Sin estándares registrados.</td></tr>`;
+  }
+  function quitarEstandar(id) {
+    estandaresCatalogo = estandaresCatalogo.filter((e) => e.id !== id);
+    saveStore("estandares", estandaresCatalogo);
+    renderTablaEstandares();
+    recalcularForm();
+  }
+  document.getElementById("btnGuardarEstandar").addEventListener("click", () => {
+    const productoId = document.getElementById("estProducto").value;
+    const techoMermaPct = parseDecimal(document.getElementById("estTecho").value);
+    if (!productoId) return;
+    const idx = estandaresCatalogo.findIndex((e) => e.id === productoId);
+    if (idx >= 0) estandaresCatalogo[idx] = { id: productoId, techoMermaPct };
+    else estandaresCatalogo.push({ id: productoId, techoMermaPct });
+    saveStore("estandares", estandaresCatalogo);
+    renderTablaEstandares();
+    recalcularForm();
+    showToast("Estándar guardado.");
+  });
+
+  // ================= PROVEEDORES =================
+  function renderTablaProveedores() {
+    document.getElementById("tablaProveedores").innerHTML = proveedoresCatalogo.length
+      ? proveedoresCatalogo.map((p) => `<tr><td>${p.nombre}</td><td>${p.contacto || "—"}</td>
+          <td><button type="button" class="btn ghost" onclick="quitarProveedor('${p.id}')">Quitar</button></td></tr>`).join("")
+      : `<tr><td colspan="3" class="empty">Sin proveedores registrados.</td></tr>`;
+  }
+  function quitarProveedor(id) {
+    proveedoresCatalogo = proveedoresCatalogo.filter((p) => p.id !== id);
+    saveStore("proveedores", proveedoresCatalogo);
+    renderTablaProveedores(); renderSelectProveedores();
+  }
+  document.getElementById("btnAgregarProveedor").addEventListener("click", () => {
+    const nombre = document.getElementById("pvNombre").value.trim();
+    const contacto = document.getElementById("pvContacto").value.trim();
+    if (!nombre) { showToast("Ingresa el nombre del proveedor."); return; }
+    proveedoresCatalogo.push({ id: nuevoId(), nombre, contacto, activo: true });
+    saveStore("proveedores", proveedoresCatalogo);
+    document.getElementById("pvNombre").value = ""; document.getElementById("pvContacto").value = "";
+    renderTablaProveedores(); renderSelectProveedores();
+    showToast("Proveedor agregado.");
+  });
+
+  // ================= DASHBOARD =================
+  const PALETA = ["#0F6EBE", "#A9C814", "#3C8FD1", "#8DB83A", "#6CB6E6", "#a86c1a", "#b3402e", "#6b5b95", "#4a90a4", "#a3562f"];
+  function renderDashboard() {
+    const desde = document.getElementById("dashDesde").value;
+    const hasta = document.getElementById("dashHasta").value;
+    const rows = lotesCatalogo.filter((l) => (!desde || l.fecha >= desde) && (!hasta || l.fecha <= hasta)).map((l) => ({ lote: l, calc: calcularHistorialFila(l) }));
+    const kpisEl = document.getElementById("dashKpis");
+    if (!rows.length) {
+      kpisEl.innerHTML = `<div class="empty">Sin datos en este rango.</div>`;
+      document.getElementById("barRendimiento").innerHTML = "";
+      document.getElementById("donutParticipacion").innerHTML = "";
+      document.getElementById("legendParticipacion").innerHTML = "";
+      document.getElementById("tablaRanking").innerHTML = "";
+      return;
+    }
+    let totalIng = 0, totalProd = 0, totalPerdida = 0;
+    const porMP = new Map(); const porArticulo = new Map();
+    rows.forEach(({ lote, calc }) => {
+      totalIng += calc.gramosIngresados; totalProd += calc.gramosProductivos; totalPerdida += calc.valorPerdida;
+      if (!porMP.has(lote.materiaPrimaNombre)) porMP.set(lote.materiaPrimaNombre, { ing: 0, prod: 0 });
+      porMP.get(lote.materiaPrimaNombre).ing += calc.gramosIngresados;
+      porMP.get(lote.materiaPrimaNombre).prod += calc.gramosProductivos;
+      lote.articulos.forEach((a) => porArticulo.set(a.nombre, (porArticulo.get(a.nombre) || 0) + a.cantidad * a.pesoG));
+    });
+    const rendGlobal = totalIng > 0 ? (totalProd / totalIng) * 100 : 0;
+    kpisEl.innerHTML = `
+      <div class="kpi"><div class="k-label">Lotes</div><div class="k-value">${rows.length}</div></div>
+      <div class="kpi"><div class="k-label">Kg porcionados</div><div class="k-value">${(totalIng / 1000).toFixed(1)}</div></div>
+      <div class="kpi"><div class="k-label">Rendimiento prom.</div><div class="k-value">${rendGlobal.toFixed(1)}%</div></div>
+      <div class="kpi"><div class="k-label">Valor pérdida</div><div class="k-value">${money(totalPerdida)}</div></div>`;
+    document.getElementById("barRendimiento").innerHTML = [...porMP.entries()].map(([nombre, v]) => {
+      const pct = v.ing > 0 ? (v.prod / v.ing) * 100 : 0;
+      return `<div><div class="barlabel"><span>${nombre}</span><span>${pct.toFixed(1)}%</span></div>
+        <div class="bartrack"><div class="barfill" style="width:${Math.min(pct, 100)}%"></div></div></div>`;
+    }).join("");
+    const entries = [...porArticulo.entries()].sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((s, e) => s + e[1], 0);
+    let anguloAcum = 0; const cx = 75, cy = 75, r = 60, rInner = 34;
+    function punto(radio, angulo) { const rad = (angulo - 90) * (Math.PI / 180); return [cx + radio * Math.cos(rad), cy + radio * Math.sin(rad)]; }
+    const paths = entries.map(([, valor], i) => {
+      const pct = total > 0 ? valor / total : 0;
+      const a0 = anguloAcum, a1 = anguloAcum + pct * 360; anguloAcum = a1;
+      const largo = a1 - a0 > 180 ? 1 : 0;
+      const [x1, y1] = punto(r, a0), [x2, y2] = punto(r, a1), [x1i, y1i] = punto(rInner, a1), [x2i, y2i] = punto(rInner, a0);
+      return `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largo} 1 ${x2} ${y2} L ${x1i} ${y1i} A ${rInner} ${rInner} 0 ${largo} 0 ${x2i} ${y2i} Z" fill="${PALETA[i % PALETA.length]}"></path>`;
+    }).join("");
+    document.getElementById("donutParticipacion").innerHTML = entries.length ? paths : `<circle cx="75" cy="75" r="60" fill="var(--surface-2)" />`;
+    document.getElementById("legendParticipacion").innerHTML = entries.length
+      ? entries.map(([nombre, valor], i) => `<div><span class="sw" style="background:${PALETA[i % PALETA.length]}"></span>${nombre} — ${(total > 0 ? (valor / total) * 100 : 0).toFixed(1)}%</div>`).join("")
+      : `<div class="empty">Sin datos</div>`;
+    const top = [...rows].sort((a, b) => b.calc.pctPerdida - a.calc.pctPerdida).slice(0, 10);
+    document.getElementById("tablaRanking").innerHTML = top.map(({ lote, calc }) => `
+      <tr><td>${lote.fecha}</td><td>${lote.materiaPrimaNombre}</td><td>${lote.responsable || "—"}</td>
+      <td class="num">${calc.pctPerdida.toFixed(1)}%</td><td class="num">${money(calc.valorPerdida)}</td><td>${badgeEstado(calc.estado)}</td></tr>`).join("");
+  }
+  document.getElementById("btnDashFiltrar").addEventListener("click", renderDashboard);
+  document.getElementById("btnDashLimpiar").addEventListener("click", () => {
+    const hoy = new Date(); const hace90 = new Date(); hace90.setDate(hoy.getDate() - 90);
+    document.getElementById("dashHasta").value = hoy.toISOString().slice(0, 10);
+    document.getElementById("dashDesde").value = hace90.toISOString().slice(0, 10);
+    renderDashboard();
+  });
+
+  // ================= TABS =================
+  document.querySelectorAll("nav.tabs button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("nav.tabs button").forEach((b) => { b.classList.remove("active"); b.setAttribute("aria-selected", "false"); });
+      btn.classList.add("active"); btn.setAttribute("aria-selected", "true");
+      document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+      document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+      if (btn.dataset.tab === "historial") renderHistorial();
+      if (btn.dataset.tab === "estandares") renderTablaEstandares();
+      if (btn.dataset.tab === "matrizcortes") renderTablaCortes();
+      if (btn.dataset.tab === "proveedores") renderTablaProveedores();
+      if (btn.dataset.tab === "dashboard") renderDashboard();
+    });
+  });
+
+  // ================= INIT =================
+  async function init() {
+    cargarTodo();
+    renderQuienSoy();
+    document.getElementById("inFecha").value = new Date().toISOString().slice(0, 10);
+
+    renderSelectMateriaPrima(document.getElementById("inProducto"));
+    renderSelectMateriaPrima(document.getElementById("estProducto"));
+    renderSelectMateriaPrima(document.getElementById("mcProducto"));
+    renderSelectProveedores();
+    updatePrecioSugerido();
+    cargarCortesAutomaticos();
+
+    downloadsCap = await claude.use("downloads");
+  }
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "porcionamientos-caujaral",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Porcionamientos - Analisis de carniceria, Club Lagos de Caujaral",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
