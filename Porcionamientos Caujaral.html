@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Porcionamientos - Analisis de carniceria</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
     --bg: #F2F2F2;
@@ -175,27 +177,31 @@
   }
 
   @page { size: A4 portrait; margin: 8mm; }
-  @media print {
-    body { background: #fff; font-size: 10.5px; }
-    .no-print, nav.tabs, p.lede, .toast, #btnAgregarFila, .btn.ghost, #btnGuardarLote,
-    .card .card-sub,
-    #tablaArticulosProducidos th:last-child, #tablaArticulosProducidos td:last-child,
-    #panel-historial, #panel-dashboard, #panel-estandares, #panel-matrizcortes, #panel-proveedores, #panel-ayuda {
-      display: none !important;
-    }
-    .panel { display: none !important; }
-    #panel-nuevo { display: block !important; }
-    .wrap { max-width: none; width: 100%; padding: 0; }
-    .card { box-shadow: none; border: 1px solid #ccc; padding: 7px 10px; margin-bottom: 5px; break-inside: avoid; }
-    .card h2 { font-size: 12.5px; margin: 0 0 3px; }
-    .row { margin-bottom: 5px; }
-    .kpis { grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 5px 0 0; }
-    .kpi { padding: 5px 6px; }
-    .recon-grid { grid-template-columns: repeat(3, 1fr); gap: 5px 12px; }
-    #inObs { min-height: 24px; }
-    .firmas-grid { margin-top: 16px; }
-    .firma-linea { height: 28px; margin-bottom: 5px; }
+
+  /* La clase .pdf-export deja el "Nuevo lote" listo para una hoja: la ponen los
+     eventos beforeprint/afterprint (Ctrl+P) Y la captura de "Exportar PDF"/
+     "Compartir" (ver JS), así los dos formatos quedan siempre idénticos. */
+  body.pdf-export { background: #fff; font-size: 10.5px; }
+  body.pdf-export .no-print, body.pdf-export nav.tabs, body.pdf-export p.lede, body.pdf-export .toast,
+  body.pdf-export #btnAgregarFila, body.pdf-export .btn.ghost, body.pdf-export #btnGuardarLote,
+  body.pdf-export .card .card-sub,
+  body.pdf-export #tablaArticulosProducidos th:last-child, body.pdf-export #tablaArticulosProducidos td:last-child,
+  body.pdf-export #panel-historial, body.pdf-export #panel-dashboard, body.pdf-export #panel-estandares,
+  body.pdf-export #panel-matrizcortes, body.pdf-export #panel-proveedores, body.pdf-export #panel-ayuda {
+    display: none !important;
   }
+  body.pdf-export .panel { display: none !important; }
+  body.pdf-export #panel-nuevo { display: block !important; }
+  body.pdf-export .wrap { max-width: none; width: 100%; padding: 0; }
+  body.pdf-export .card { box-shadow: none; border: 1px solid #ccc; padding: 7px 10px; margin-bottom: 5px; break-inside: avoid; }
+  body.pdf-export .card h2 { font-size: 12.5px; margin: 0 0 3px; }
+  body.pdf-export .row { margin-bottom: 5px; }
+  body.pdf-export .kpis { grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 5px 0 0; }
+  body.pdf-export .kpi { padding: 5px 6px; }
+  body.pdf-export .recon-grid { grid-template-columns: repeat(3, 1fr); gap: 5px 12px; }
+  body.pdf-export #inObs { min-height: 24px; }
+  body.pdf-export .firmas-grid { margin-top: 16px; }
+  body.pdf-export .firma-linea { height: 28px; margin-bottom: 5px; }
 </style>
 </head>
 <body>
@@ -1130,8 +1136,36 @@
     const bytes = Uint8Array.from(pdfString, (ch) => ch.charCodeAt(0));
     return new Blob([bytes], { type: "application/pdf" });
   }
+  // PDF "estilizado": una foto del panel Nuevo lote con la clase .pdf-export activa
+  // (las mismas reglas que usa Ctrl+P), para que el PDF de Exportar/Compartir se vea
+  // igual al de imprimir. windowWidth fuerza un ancho de escritorio aunque se capture
+  // desde un celular, para que las tarjetas no queden apiladas en una sola columna.
+  async function construirBlobPDFEstilizado() {
+    const panel = document.getElementById("panel-nuevo");
+    document.body.classList.add("pdf-export");
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    try {
+      const canvas = await html2canvas(panel, { scale: 2, backgroundColor: "#ffffff", windowWidth: 1000, useCORS: true });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let imgWidth = pageWidth;
+      let imgHeight = (canvas.height * imgWidth) / canvas.width;
+      if (imgHeight > pageHeight) { imgHeight = pageHeight; imgWidth = (canvas.width * imgHeight) / canvas.height; }
+      const x = (pageWidth - imgWidth) / 2;
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", x, 0, imgWidth, imgHeight);
+      return pdf.output("blob");
+    } finally {
+      document.body.classList.remove("pdf-export");
+    }
+  }
   async function exportarPDFDelLote() {
-    const blob = construirBlobPDF();
+    let blob = null;
+    if (window.html2canvas && window.jspdf) {
+      try { blob = await construirBlobPDFEstilizado(); } catch (err) { blob = null; }
+    }
+    if (!blob) blob = construirBlobPDF();
     const nombreArchivo = `analisis_porcionamiento_${document.getElementById("inFecha").value || "sin-fecha"}.pdf`;
     await compartirOdescargar(blob, nombreArchivo, "application/pdf", "Análisis de porcionamiento (PDF)");
   }
@@ -1412,8 +1446,11 @@
     });
   });
 
+  window.addEventListener("beforeprint", () => document.body.classList.add("pdf-export"));
+  window.addEventListener("afterprint", () => document.body.classList.remove("pdf-export"));
+
   // ================= INIT =================
-  async function init() {
+  function init() {
     cargarTodo();
     renderQuienSoy();
     document.getElementById("inFecha").value = new Date().toISOString().slice(0, 10);
@@ -1424,8 +1461,6 @@
     renderSelectProveedores();
     updatePrecioSugerido();
     cargarCortesAutomaticos();
-
-    downloadsCap = await claude.use("downloads");
   }
   init();
 </script>
