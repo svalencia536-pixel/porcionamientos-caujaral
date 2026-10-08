@@ -892,7 +892,7 @@
       tr.innerHTML = `
         <td>${art.nombre}<input type="hidden" class="f-id" value="${art.id}" /></td>
         <td class="num">${art.pesoG} g<input type="hidden" class="f-peso" value="${art.pesoG}" /></td>
-        <td class="num"><input class="f-cant" type="text" inputmode="numeric" value="${prefill.cantidad ? prefill.cantidad : ""}" /></td>
+        <td class="num"><input class="f-cant" type="text" inputmode="decimal" value="${prefill.cantidad ? prefill.cantidad : ""}" /></td>
         <td class="num"><input class="f-dism" type="text" inputmode="decimal" value="${pctDisminucionPorDefecto(art.nombre)}" /></td>
         <td class="num f-pesoTotal">0 g</td>
         <td class="num f-valorUnidad">$0</td>
@@ -904,7 +904,7 @@
       tr.innerHTML = `
         <td><select class="f-art">${opcionesArticulos(cortes, art.id)}</select></td>
         <td class="num"><span class="f-peso-label">${art.pesoG} g</span><input type="hidden" class="f-peso" value="${art.pesoG}" /></td>
-        <td class="num"><input class="f-cant" type="text" inputmode="numeric" value="" /></td>
+        <td class="num"><input class="f-cant" type="text" inputmode="decimal" value="" /></td>
         <td class="num"><input class="f-dism" type="text" inputmode="decimal" value="${pctDisminucionPorDefecto(art.nombre)}" /></td>
         <td class="num f-pesoTotal">0 g</td>
         <td class="num f-valorUnidad">$0</td>
