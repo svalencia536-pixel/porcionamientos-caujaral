@@ -761,10 +761,20 @@
     defaults.forEach((d) => { if (!idsExistentes.has(idDe(d))) lista.push(d); });
     return lista;
   }
+  // Los cortes del catálogo de fábrica siempre llevan un id con forma
+  // "mpNN-algo"; los que el usuario crea a mano con "Agregar corte al
+  // catálogo" llevan un uuid (nuevoId()). Así se puede refrescar el
+  // catálogo de fábrica en cada carga (sin ids viejos duplicados ni
+  // nombres/pesos ya corregidos en el código) sin perder lo que el
+  // usuario haya agregado por su cuenta.
+  function esIdCatalogoDeFabrica(id) {
+    return /^mp\d{2}-/.test(id);
+  }
   function cargarTodo() {
     materiaPrimaCatalogo = fusionarConDefaults(loadStore("materiaPrima", DEFAULT_MATERIA_PRIMA), DEFAULT_MATERIA_PRIMA, (x) => x.id);
     proveedoresCatalogo = fusionarConDefaults(loadStore("proveedores", DEFAULT_PROVEEDORES), DEFAULT_PROVEEDORES, (x) => x.id);
-    cortesCatalogo = fusionarConDefaults(loadStore("cortes", DEFAULT_CORTES), DEFAULT_CORTES, (x) => x.id);
+    const cortesPersonalizados = loadStore("cortes", DEFAULT_CORTES).filter((c) => !esIdCatalogoDeFabrica(c.id));
+    cortesCatalogo = cortesPersonalizados.concat(DEFAULT_CORTES);
     estandaresCatalogo = fusionarConDefaults(loadStore("estandares", DEFAULT_ESTANDARES), DEFAULT_ESTANDARES, (x) => x.id);
     lotesCatalogo = loadStore("lotes", []);
     saveStore("materiaPrima", materiaPrimaCatalogo);
