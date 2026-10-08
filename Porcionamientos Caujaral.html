@@ -208,6 +208,7 @@
   body.pdf-export #panel-nuevo { display: block !important; }
   body.pdf-export .wrap { max-width: none; width: 100%; padding: 0; }
   body.pdf-export .card { box-shadow: none; border: 1px solid #ccc; padding: 7px 10px; margin-bottom: 5px; break-inside: avoid; }
+  body.pdf-export tr.fila-sin-cantidad { display: none; }
   body.pdf-export .card h2 { font-size: 12.5px; margin: 0 0 3px; }
   body.pdf-export .row { margin-bottom: 5px; }
   body.pdf-export .kpis { grid-template-columns: repeat(7, 1fr); gap: 5px; margin: 5px 0 0; }
@@ -1000,6 +1001,10 @@
       tr.querySelector(".f-valorUnidad").textContent = money(f.valorUnidadFinal);
       tr.querySelector(".f-valorTotal").textContent = money(f.valorFinal);
       tr.querySelector(".f-pctRen").textContent = f.pctRen.toFixed(1) + "%";
+      // En pantalla se ven todos los cortes para poder llenarlos; al
+      // imprimir o descargar el PDF solo deben salir los que sí tengan
+      // cantidad — esta clase los oculta solo en @media print.
+      tr.classList.toggle("fila-sin-cantidad", !(f.cantidad > 0));
     });
     document.getElementById("inDifNoIdentificada").value = gramos(c.gramosSinExplicar);
     document.getElementById("rcValorFactura").textContent = money(c.valorFactura);
@@ -1183,7 +1188,7 @@
     pdf.setFontSize(10); pdf.setTextColor(15, 110, 190);
     pdf.text("Artículos producidos", 14, y);
     pdf.setTextColor(30, 30, 30);
-    const cuerpoArticulos = c.filas.map((f) => {
+    const cuerpoArticulos = c.filas.filter((f) => f.cantidad > 0).map((f) => {
       const corte = cortes.find((a) => a.id === f.id);
       return [
         corte ? corte.codigo || "—" : "—",
