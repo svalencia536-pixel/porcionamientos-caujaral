@@ -284,7 +284,7 @@
 
     <div class="card">
       <h2>Artículos producidos</h2>
-      <p class="card-sub">El valor de la factura se reparte por gramo entre los artículos producidos.</p>
+      <p class="card-sub">El valor de la factura se reparte por gramo entre los artículos producidos. Los recortes/picadas traen un % de disminución sugerido (editable) — ese valor se reparte entre los demás artículos.</p>
       <div class="table-scroll">
         <table id="tablaArticulosProducidos">
           <thead>
@@ -292,6 +292,7 @@
               <th>Artículo</th>
               <th class="num">Peso unit. (g)</th>
               <th class="num">Cantidad</th>
+              <th class="num">% Dism.</th>
               <th class="num">Peso total</th>
               <th class="num">Valor/unidad</th>
               <th class="num">Valor total</th>
@@ -873,6 +874,12 @@
     if (!cortes.length) return `<option value="">Sin cortes definidos</option>`;
     return cortes.map((c) => `<option value="${c.id}" ${c.id === idSel ? "selected" : ""}>${c.nombre}</option>`).join("");
   }
+  // Los recortes y picadas valen menos que el corte limpio: por defecto se
+  // sugiere un 40% de disminución sobre su valor por gramo, repartido entre
+  // los demás artículos del lote — pero se puede ajustar por fila.
+  function pctDisminucionPorDefecto(nombre) {
+    return /recorte|picada/i.test(nombre || "") ? 40 : 0;
+  }
   function agregarFila(prefill) {
     const productoId = document.getElementById("inProducto").value;
     const cortes = cortesDeProteina(productoId);
@@ -885,6 +892,7 @@
         <td>${art.nombre}<input type="hidden" class="f-id" value="${art.id}" /></td>
         <td class="num">${art.pesoG} g<input type="hidden" class="f-peso" value="${art.pesoG}" /></td>
         <td class="num"><input class="f-cant" type="text" inputmode="numeric" value="${prefill.cantidad ? prefill.cantidad : ""}" /></td>
+        <td class="num"><input class="f-dism" type="text" inputmode="decimal" value="${pctDisminucionPorDefecto(art.nombre)}" /></td>
         <td class="num f-pesoTotal">0 g</td>
         <td class="num f-valorUnidad">$0</td>
         <td class="num f-valorTotal">$0</td>
@@ -896,6 +904,7 @@
         <td><select class="f-art">${opcionesArticulos(cortes, art.id)}</select></td>
         <td class="num"><span class="f-peso-label">${art.pesoG} g</span><input type="hidden" class="f-peso" value="${art.pesoG}" /></td>
         <td class="num"><input class="f-cant" type="text" inputmode="numeric" value="" /></td>
+        <td class="num"><input class="f-dism" type="text" inputmode="decimal" value="${pctDisminucionPorDefecto(art.nombre)}" /></td>
         <td class="num f-pesoTotal">0 g</td>
         <td class="num f-valorUnidad">$0</td>
         <td class="num f-valorTotal">$0</td>
@@ -903,12 +912,17 @@
         <td><button type="button" class="btn ghost">Quitar</button></td>`;
       tr.querySelector(".f-art").addEventListener("change", (e) => {
         const a = cortes.find((x) => x.id === e.target.value);
-        if (a) { tr.querySelector(".f-peso").value = a.pesoG; tr.querySelector(".f-peso-label").textContent = a.pesoG + " g"; }
+        if (a) {
+          tr.querySelector(".f-peso").value = a.pesoG;
+          tr.querySelector(".f-peso-label").textContent = a.pesoG + " g";
+          tr.querySelector(".f-dism").value = pctDisminucionPorDefecto(a.nombre);
+        }
         recalcularForm();
       });
     }
     tbody.appendChild(tr);
     tr.querySelector(".f-cant").addEventListener("input", recalcularForm);
+    tr.querySelector(".f-dism").addEventListener("input", recalcularForm);
     tr.querySelector(".btn.ghost").addEventListener("click", () => { tr.remove(); recalcularForm(); });
   }
   function cargarCortesAutomaticos() {
@@ -934,6 +948,7 @@
           id: selectEl ? selectEl.value : idEl.value,
           cantidad: parseDecimal(tr.querySelector(".f-cant").value),
           pesoG: parseDecimal(tr.querySelector(".f-peso").value),
+          pctDisminucion: parseDecimal(tr.querySelector(".f-dism").value),
         };
       }),
     };
@@ -941,15 +956,29 @@
   function calcularLoteCompleto(lote) {
     const gramosIngresados = lote.pesoPorcionado * 1000;
     const valorFactura = lote.precioKg * lote.pesoPorcionado;
-    const filas = lote.articulos.map((a) => ({ ...a, pesoTotalG: a.cantidad * a.pesoG }));
+    const filas = lote.articulos.map((a) => ({ ...a, pesoTotalG: a.cantidad * a.pesoG, pctDisminucion: Math.min(100, Math.max(0, a.pctDisminucion || 0)) }));
     const gramosProductivos = filas.reduce((s, f) => s + f.pesoTotalG, 0);
-    const costoPorGramo = gramosProductivos > 0 ? valorFactura / gramosProductivos : 0;
+    // Los recortes/picadas valen un % fijo menos del precio de compra (no del
+    // costo por gramo recalculado) — así su valor no se mueve aunque cambien
+    // los demás artículos del lote. Lo que dejan de valer se prorratea entre
+    // los artículos sin descuento, repartiendo lo que sí queda de la factura.
+    const costoPorGramoCompra = lote.precioKg / 1000;
+    let valorDescontadoTotal = 0;
     filas.forEach((f) => {
-      f.valorFinal = f.pesoTotalG * costoPorGramo;
+      if (f.pctDisminucion > 0) {
+        f.valorFinal = f.pesoTotalG * costoPorGramoCompra * (1 - f.pctDisminucion / 100);
+        valorDescontadoTotal += f.valorFinal;
+      }
+    });
+    const pesoSinDescuento = filas.filter((f) => !(f.pctDisminucion > 0)).reduce((s, f) => s + f.pesoTotalG, 0);
+    const valorRestante = valorFactura - valorDescontadoTotal;
+    const costoPorGramo = pesoSinDescuento > 0 ? valorRestante / pesoSinDescuento : 0;
+    filas.forEach((f) => {
+      if (!(f.pctDisminucion > 0)) f.valorFinal = f.pesoTotalG * costoPorGramo;
       f.valorUnidadFinal = f.cantidad > 0 ? f.valorFinal / f.cantidad : 0;
       f.pctRen = gramosIngresados > 0 ? (f.pesoTotalG / gramosIngresados) * 100 : 0;
     });
-    const subtotalProductivo = filas.reduce((s, f) => s + f.pesoTotalG * costoPorGramo, 0);
+    const subtotalProductivo = gramosProductivos * costoPorGramoCompra;
     const valorAbsorbido = filas.reduce((s, f) => s + f.valorFinal, 0);
     const diferenciaValor = subtotalProductivo - valorAbsorbido;
     const mermaLiquidosG = lote.mermaLiquidosG || 0;
@@ -1016,7 +1045,7 @@
     const cortes = cortesDeProteina(lote.productoId);
     const articulosGuardar = filasValidas.map((f) => {
       const corte = cortes.find((c) => c.id === f.id);
-      return { codigo: corte ? corte.codigo : "", nombre: corte ? corte.nombre : "?", cantidad: f.cantidad, pesoG: f.pesoG };
+      return { codigo: corte ? corte.codigo : "", nombre: corte ? corte.nombre : "?", cantidad: f.cantidad, pesoG: f.pesoG, pctDisminucion: f.pctDisminucion || 0 };
     });
     const consecutivo = (lotesCatalogo.reduce((max, l) => Math.max(max, l.consecutivo || 0), 0)) + 1;
     const doc = {
@@ -1156,14 +1185,36 @@
     pdf.setTextColor(30, 30, 30);
     const cuerpoArticulos = c.filas.map((f) => {
       const corte = cortes.find((a) => a.id === f.id);
-      return [corte ? corte.nombre : "?", f.pesoG + " g", f.cantidad, gramos(f.pesoTotalG), money(f.valorUnidadFinal), money(f.valorFinal), f.pctRen.toFixed(1) + "%"];
+      return [
+        corte ? corte.codigo || "—" : "—",
+        corte ? corte.nombre : "?",
+        f.pesoG + " g",
+        f.cantidad,
+        f.pctDisminucion > 0 ? f.pctDisminucion + "%" : "—",
+        gramos(f.pesoTotalG),
+        money(f.valorUnidadFinal),
+        money(f.valorFinal),
+        f.pctRen.toFixed(1) + "%",
+      ];
     });
     pdf.autoTable({
       startY: y + 2,
-      head: [["Artículo", "Peso u.", "Cant.", "Peso tot.", "Valor/u", "Valor tot.", "%REN"]],
-      body: cuerpoArticulos.length ? cuerpoArticulos : [["—", "", "", "", "", "", ""]],
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [15, 110, 190] },
+      head: [["Código", "Artículo", "Peso u.", "Cant.", "% Dism.", "Peso tot.", "Valor/u", "Valor tot.", "%REN"]],
+      body: cuerpoArticulos.length ? cuerpoArticulos : [["—", "—", "", "", "", "", "", "", ""]],
+      styles: { fontSize: 7.5, overflow: "ellipsize" },
+      headStyles: { fillColor: [15, 110, 190], fontSize: 7 },
+      columnStyles: {
+        0: { cellWidth: 16 },
+        1: { cellWidth: 44 },
+        2: { cellWidth: 14 },
+        3: { cellWidth: 12 },
+        4: { cellWidth: 13 },
+        5: { cellWidth: 16 },
+        6: { cellWidth: 18 },
+        7: { cellWidth: 20 },
+        8: { cellWidth: 13 },
+      },
+      margin: { left: 14, right: 14 },
     });
     y = pdf.lastAutoTable.finalY + 4;
 
@@ -1285,7 +1336,7 @@
     const c = calcularLoteCompleto({
       productoId: l.materiaPrimaId, precioKg: l.precioKg, pesoPorcionado: l.pesoPorcionadoKg,
       mermaLiquidosG: l.mermaLiquidosG, mermaHuesoGordoG: l.mermaHuesoGordoG,
-      articulos: l.articulos.map((a) => ({ id: a.codigo || a.nombre, cantidad: a.cantidad, pesoG: a.pesoG })),
+      articulos: l.articulos.map((a) => ({ id: a.codigo || a.nombre, cantidad: a.cantidad, pesoG: a.pesoG, pctDisminucion: a.pctDisminucion || 0 })),
     });
     const estandar = estandaresCatalogo.find((e) => e.id === l.materiaPrimaId);
     let estado = null;
