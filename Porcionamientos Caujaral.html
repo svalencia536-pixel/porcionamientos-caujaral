@@ -637,6 +637,7 @@
       { codigo: "", nombre: "Lomo Fino x250", pesoG: 250 },
       { codigo: "", nombre: "Lomo Fino x150", pesoG: 150 },
       { codigo: "", nombre: "Picada de Lomo x300", pesoG: 300 },
+      { codigo: "", nombre: "Lomo Fino Limpio", pesoG: 1000 },
       { codigo: "", nombre: "Recorte de Lomo Fino", pesoG: 1000 },
     ],
     mp14: [{ codigo: "", nombre: "Roast Beef", pesoG: 80 }],
@@ -725,12 +726,28 @@
   let estandaresCatalogo = [];
   let lotesCatalogo = [];
 
+  // Fusiona lo guardado en este dispositivo con los valores por defecto del código,
+  // agregando los que falten por id — así una actualización del catálogo (un corte
+  // nuevo, un producto nuevo) sí llega a quien ya había abierto la app antes, sin
+  // borrar lo que el usuario haya agregado o editado por su cuenta.
+  function fusionarConDefaults(guardado, defaults, idDe) {
+    const lista = Array.isArray(guardado) ? guardado.slice() : [];
+    const idsExistentes = new Set(lista.map(idDe));
+    defaults.forEach((d) => { if (!idsExistentes.has(idDe(d))) lista.push(d); });
+    return lista;
+  }
   function cargarTodo() {
-    materiaPrimaCatalogo = loadStore("materiaPrima", DEFAULT_MATERIA_PRIMA).filter((x) => x.activo !== false);
-    proveedoresCatalogo = loadStore("proveedores", DEFAULT_PROVEEDORES).filter((x) => x.activo !== false);
-    cortesCatalogo = loadStore("cortes", DEFAULT_CORTES);
-    estandaresCatalogo = loadStore("estandares", DEFAULT_ESTANDARES);
+    materiaPrimaCatalogo = fusionarConDefaults(loadStore("materiaPrima", DEFAULT_MATERIA_PRIMA), DEFAULT_MATERIA_PRIMA, (x) => x.id);
+    proveedoresCatalogo = fusionarConDefaults(loadStore("proveedores", DEFAULT_PROVEEDORES), DEFAULT_PROVEEDORES, (x) => x.id);
+    cortesCatalogo = fusionarConDefaults(loadStore("cortes", DEFAULT_CORTES), DEFAULT_CORTES, (x) => x.id);
+    estandaresCatalogo = fusionarConDefaults(loadStore("estandares", DEFAULT_ESTANDARES), DEFAULT_ESTANDARES, (x) => x.id);
     lotesCatalogo = loadStore("lotes", []);
+    saveStore("materiaPrima", materiaPrimaCatalogo);
+    saveStore("proveedores", proveedoresCatalogo);
+    saveStore("cortes", cortesCatalogo);
+    saveStore("estandares", estandaresCatalogo);
+    materiaPrimaCatalogo = materiaPrimaCatalogo.filter((x) => x.activo !== false);
+    proveedoresCatalogo = proveedoresCatalogo.filter((x) => x.activo !== false);
   }
 
   function cortesDeProteina(materiaPrimaId) {
@@ -1042,17 +1059,39 @@
       showToast("No se pudo guardar el archivo en este navegador.");
     }
   }
-  function pintarEncabezadoPDF(pdf) {
-    pdf.setFillColor(15, 110, 190); // #0F6EBE — azul institucional
-    pdf.rect(0, 0, 210, 20, "F");
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(13);
-    pdf.text("ANÁLISIS DE PORCIONAMIENTO DE PROTEÍNAS", 105, 9, { align: "center" });
-    pdf.setFontSize(9);
-    pdf.text("CLUB LAGOS DE CAUJARAL.", 105, 15, { align: "center" });
+  let logoPDFDataUrl = null;
+  async function cargarLogoPDF() {
+    if (logoPDFDataUrl !== null) return logoPDFDataUrl;
+    try {
+      const resp = await fetch("logo-caujaral-completo.png");
+      const blob = await resp.blob();
+      logoPDFDataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      logoPDFDataUrl = false;
+    }
+    return logoPDFDataUrl;
+  }
+  async function pintarEncabezadoPDF(pdf) {
+    const logo = await cargarLogoPDF();
+    if (logo) {
+      // Proporción real del logo (4500x1212) para no deformarlo.
+      pdf.addImage(logo, "PNG", 14, 8, 52, 14);
+    } else {
+      pdf.setFontSize(14); pdf.setTextColor(15, 110, 190);
+      pdf.text("CLUB LAGOS DE CAUJARAL", 14, 16);
+    }
+    pdf.setFontSize(10); pdf.setTextColor(15, 110, 190);
+    pdf.text("Análisis de Porcionamiento de Proteínas", 196, 16, { align: "right" });
+    pdf.setDrawColor(15, 110, 190); pdf.setLineWidth(0.7);
+    pdf.line(14, 24, 196, 24);
     pdf.setTextColor(30, 30, 30);
   }
-  function construirPDFAnalisis(pdf) {
+  async function construirPDFAnalisis(pdf) {
     const lote = leerLoteDesdeForm();
     const mp = materiaPrimaCatalogo.find((m) => m.id === lote.productoId);
     const c = calcularLoteCompleto(lote);
@@ -1062,8 +1101,8 @@
     const obs = document.getElementById("inObs").value.trim();
     const cortes = cortesDeProteina(lote.productoId);
 
-    pintarEncabezadoPDF(pdf);
-    let y = 27;
+    await pintarEncabezadoPDF(pdf);
+    let y = 30;
     pdf.autoTable({
       startY: y,
       theme: "plain",
@@ -1143,11 +1182,11 @@
   function nombreArchivoPDF() {
     return `analisis_porcionamiento_${document.getElementById("inFecha").value || "sin-fecha"}.pdf`;
   }
-  function descargarPDFAnalisis() {
+  async function descargarPDFAnalisis() {
     if (!document.getElementById("inProducto").value) { showToast("Selecciona la materia prima primero."); return; }
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
-    construirPDFAnalisis(pdf);
+    await construirPDFAnalisis(pdf);
     pdf.save(nombreArchivoPDF());
     showToast("PDF descargado.");
   }
@@ -1155,7 +1194,7 @@
     if (!document.getElementById("inProducto").value) { showToast("Selecciona la materia prima primero."); return; }
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF();
-    construirPDFAnalisis(pdf);
+    await construirPDFAnalisis(pdf);
     const nombreArchivo = nombreArchivoPDF();
     const archivo = new File([pdf.output("blob")], nombreArchivo, { type: "application/pdf" });
     if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
