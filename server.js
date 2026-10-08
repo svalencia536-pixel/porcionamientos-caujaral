@@ -18,13 +18,28 @@ const zlib = require('zlib');
 const PUERTO = Number(process.env.PORT || 3000);
 const ARCHIVO = path.join(__dirname, 'Porcionamientos Caujaral.html');
 
+// Imagenes propias de la pagina (el logo del Club). Se sirven tal cual, sin
+// pasar por un file server generico, para no abrir el directorio completo.
+const IMAGENES = {
+  '/logo-caujaral.png': path.join(__dirname, 'logo-caujaral.png'),
+  '/logo-caujaral-completo.png': path.join(__dirname, 'logo-caujaral-completo.png'),
+};
+
 let PAGINA = '';
 let PAGINA_GZ = null;
 let ARRANQUE = new Date();
+const IMAGENES_CARGADAS = {};
 
 function cargar() {
   PAGINA = fs.readFileSync(ARCHIVO, 'utf8');
   PAGINA_GZ = zlib.gzipSync(Buffer.from(PAGINA, 'utf8'), { level: 9 });
+  for (const [ruta, archivo] of Object.entries(IMAGENES)) {
+    try {
+      IMAGENES_CARGADAS[ruta] = fs.readFileSync(archivo);
+    } catch (e) {
+      console.error('No se pudo leer la imagen ' + archivo + ':', e.message);
+    }
+  }
 }
 
 const servidor = http.createServer((req, res) => {
@@ -39,6 +54,12 @@ const servidor = http.createServer((req, res) => {
   if (ruta === '/robots.txt') {
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('User-agent: *\nDisallow:\n');
+    return;
+  }
+
+  if (IMAGENES_CARGADAS[ruta]) {
+    res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' });
+    res.end(IMAGENES_CARGADAS[ruta]);
     return;
   }
 
