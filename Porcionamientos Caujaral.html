@@ -191,6 +191,11 @@
     .kpis, .charts-grid { grid-template-columns: 1fr; }
   }
 
+  /* La firma del autor. Discreta, al pie de Ayuda, y nunca en el papel. */
+  .firma-autor { text-align: center; padding: 10px 16px 4px; color: var(--text-muted); font-size: 11.5px; line-height: 1.6; }
+  .firma-autor b { color: var(--text); font-weight: 600; }
+  @media print { .firma-autor { display: none !important; } }
+
   /* ===== Recorrido guiado con voz ===== */
   #tourOverlay { position: fixed; inset: 0; z-index: 500; display: none; pointer-events: none; }
   #tourHighlight { position: fixed; display: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(10, 16, 20, 0.38), 0 0 0 3px var(--accent2); pointer-events: none; transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease; }
@@ -546,6 +551,12 @@
         <li><strong>Matriz de cortes</strong>, <strong>Estándares</strong> y <strong>Proveedores</strong>: catálogos que alimentan el formulario de "Nuevo lote" — ya vienen con los datos reales del Club, pero puedes ajustarlos aquí.</li>
         <li><strong>Importante</strong>: todo lo que registres se guarda solo en <em>este</em> navegador/celular, no se comparte automáticamente con otros equipos. Si varias personas capturan lotes desde distintos dispositivos, cada uno tendrá su propio historial por separado.</li>
       </ol>
+    </div>
+    <div class="firma-autor">
+      Aplicación web de análisis de porcionamiento y mermas de carnicería para el
+      <b>Club Lagos de Caujaral</b><br>
+      Desarrollada por <b>Sergio Valencia</b> · Controller financiero,
+      control de gestión en alimentos y bebidas
     </div>
   </section>
 </div><!-- /wrap -->
