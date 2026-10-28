@@ -1638,12 +1638,45 @@
     }
     return overlay;
   }
+  let tourActivo = false;
+  let tourWakeLock = null;
+  async function tourPedirWakeLock() {
+    try {
+      if ("wakeLock" in navigator) tourWakeLock = await navigator.wakeLock.request("screen");
+    } catch (e) { tourWakeLock = null; }
+  }
+  function tourLiberarWakeLock() {
+    if (tourWakeLock) { try { tourWakeLock.release(); } catch (e) {} tourWakeLock = null; }
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (tourActivo && document.visibilityState === "visible" && !tourWakeLock) tourPedirWakeLock();
+  });
+  // Habla por frases en vez de un solo bloque largo: varios navegadores
+  // (sobre todo en celular) cortan la voz a mitad de camino cuando el texto
+  // es largo. Al terminar la última frase, avanza solo al siguiente paso.
+  function hablar(texto, alTerminar) {
+    try { speechSynthesis.cancel(); } catch (e) {}
+    if (!("speechSynthesis" in window)) { if (alTerminar) alTerminar(); return; }
+    const frases = texto.split(/(?<=[.!?])\s+/).filter(Boolean);
+    if (!frases.length) { if (alTerminar) alTerminar(); return; }
+    frases.forEach((frase, i) => {
+      const u = new SpeechSynthesisUtterance(frase);
+      u.lang = "es-CO";
+      u.rate = 1;
+      if (i === frases.length - 1 && alTerminar) u.onend = alTerminar;
+      speechSynthesis.speak(u);
+    });
+  }
   function tourIniciar() {
     tourIdx = 0;
+    tourActivo = true;
+    tourPedirWakeLock();
     tourElementos().style.display = "block";
     tourMostrarPaso();
   }
   function tourDetener() {
+    tourActivo = false;
+    tourLiberarWakeLock();
     try { speechSynthesis.cancel(); } catch (e) {}
     const overlay = document.getElementById("tourOverlay");
     if (overlay) overlay.style.display = "none";
@@ -1691,13 +1724,10 @@
         card.style.transform = "translate(-50%, -50%)";
       }
     }));
-    try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(paso.texto);
-      u.lang = "es-CO";
-      u.rate = 1;
-      speechSynthesis.speak(u);
-    } catch (e) {}
+    const pasoAlIniciar = tourIdx;
+    hablar(paso.texto, () => {
+      if (tourActivo && tourIdx === pasoAlIniciar) tourSiguiente();
+    });
   }
   document.getElementById("btnIniciarTour").addEventListener("click", tourIniciar);
 
