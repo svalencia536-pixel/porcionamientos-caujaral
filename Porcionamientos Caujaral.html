@@ -190,6 +190,15 @@
     .kpis, .charts-grid { grid-template-columns: 1fr; }
   }
 
+  /* ===== Recorrido guiado con voz ===== */
+  #tourOverlay { position: fixed; inset: 0; z-index: 500; display: none; pointer-events: none; }
+  #tourHighlight { position: fixed; display: none; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(10, 16, 20, 0.38), 0 0 0 3px var(--accent2); pointer-events: none; transition: top 0.3s ease, left 0.3s ease, width 0.3s ease, height 0.3s ease; }
+  #tourCard { position: fixed; width: 260px; max-width: calc(100vw - 24px); background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 13px 14px; box-shadow: var(--shadow); pointer-events: auto; transition: top 0.3s ease, left 0.3s ease; z-index: 501; }
+  #tourTexto { font-size: 12.5px; line-height: 1.45; margin-bottom: 10px; }
+  #tourControles { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #tourControles .btn { padding: 5px 9px; font-size: 11.5px; margin: 0; width: auto; }
+  #tourContador { font-size: 10.5px; color: var(--text-muted); margin-right: auto; }
+
   @page { size: A4 portrait; margin: 8mm; }
 
   /* La clase .pdf-export deja el "Nuevo lote" listo para una hoja: la ponen los
@@ -519,6 +528,11 @@
 
   <!-- ===================== TAB: AYUDA ===================== -->
   <section class="panel" id="panel-ayuda">
+    <div class="card">
+      <h2>🔊 Recorrido guiado con voz</h2>
+      <p class="card-sub">Te lleva paso a paso por la aplicación, explicando en voz alta cada parte de la pantalla.</p>
+      <button type="button" class="btn" id="btnIniciarTour">▶️ Ver cómo usar (con voz)</button>
+    </div>
     <div class="card">
       <h2>📖 Instructivo</h2>
       <p class="card-sub">Guía rápida de uso.</p>
@@ -1579,6 +1593,112 @@
 
   window.addEventListener("beforeprint", () => document.body.classList.add("pdf-export"));
   window.addEventListener("afterprint", () => document.body.classList.remove("pdf-export"));
+
+  // ================= RECORRIDO GUIADO CON VOZ =================
+  const TOUR_PASOS = [
+    { tab: null, selector: ".side-head", texto: "Bienvenido a Porcionamientos, el aplicativo de análisis de carnicería del Club Lagos de Caujaral. Te voy a mostrar cómo usarlo, paso a paso." },
+    { tab: null, selector: "nav.tabs", texto: "A la izquierda tienes el menú: Nuevo lote, Historial, Estándares, Matriz de cortes, Proveedores, Dashboard, y esta misma Ayuda." },
+    { tab: "nuevo", selector: "#inProducto", texto: "Empecemos en Nuevo lote. Aquí eliges la materia prima que vas a porcionar, por ejemplo Lomo Fino. Al seleccionarla, sus cortes típicos se cargan solos más abajo." },
+    { tab: "nuevo", selector: "#inProveedor", texto: "También eliges el proveedor y la fecha del lote." },
+    { tab: "nuevo", selector: "#inPrecio", texto: "Aquí escribes el precio de compra por kilo, tal como viene en la factura, y el peso porcionado en kilos." },
+    { tab: "nuevo", selector: "#tablaArticulosProducidos", texto: "En esta tabla aparecen los cortes de la proteína elegida. Solo digita la cantidad que obtuviste de cada uno. Si un corte es un recorte o una picada, se sugiere automáticamente un porcentaje de disminución sobre su valor de compra, que puedes ajustar; lo que se descuenta se reparte entre los demás artículos." },
+    { tab: "nuevo", selector: "#inMermaLiquidos", texto: "Aquí registras las mermas líquidas y el desperdicio de hueso o gordo. Lo que sobre después de eso queda como diferencia no identificada." },
+    { tab: "nuevo", selector: "#rcValorFactura", texto: "La conciliación de factura te muestra si el valor y el peso del lote quedaron completamente explicados." },
+    { tab: "nuevo", selector: "#kpiGramosProductivos", texto: "Y aquí ves el resultado: el rendimiento, el valor de la pérdida, y si el lote quedó dentro o por debajo del estándar." },
+    { tab: "nuevo", selector: "#btnGuardarLote", texto: "Cuando todo esté listo, dale Guardar lote. Después puedes descargar el PDF, exportarlo a Excel, o compartirlo directamente por WhatsApp o correo." },
+    { tab: "historial", selector: "#tablaHistorial", texto: "En Historial puedes consultar todos los lotes guardados, filtrarlos por fecha, y tocar cualquiera para ver su detalle." },
+    { tab: "matrizcortes", selector: "#btnAgregarCorte", texto: "En Matriz de cortes puedes agregar o ajustar los cortes típicos de cada proteína, para que se carguen solos la próxima vez." },
+    { tab: "estandares", selector: "#btnGuardarEstandar", texto: "En Estándares defines el techo máximo de merma permitido por producto, para saber cuándo un lote queda fuera de lo esperado." },
+    { tab: "proveedores", selector: "#btnAgregarProveedor", texto: "En Proveedores llevas la lista de quién te vende cada proteína." },
+    { tab: "dashboard", selector: "#dashKpis", texto: "Y en el Dashboard ves el panorama general: rendimiento por materia prima, participación de cada corte, y los lotes con mayor pérdida." },
+    { tab: "ayuda", selector: "#btnIniciarTour", texto: "Eso es todo. Ya puedes empezar a registrar tus lotes. ¡Éxitos!" },
+  ];
+  let tourIdx = 0;
+  function tourElementos() {
+    let overlay = document.getElementById("tourOverlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "tourOverlay";
+      overlay.innerHTML = `
+        <div id="tourHighlight"></div>
+        <div id="tourCard">
+          <div id="tourTexto"></div>
+          <div id="tourControles">
+            <span id="tourContador"></span>
+            <button type="button" class="btn ghost" id="tourAnterior">◀</button>
+            <button type="button" class="btn secondary" id="tourSalir">✕ Salir</button>
+            <button type="button" class="btn" id="tourSiguiente">Siguiente →</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      document.getElementById("tourSiguiente").addEventListener("click", tourSiguiente);
+      document.getElementById("tourAnterior").addEventListener("click", tourAnterior);
+      document.getElementById("tourSalir").addEventListener("click", tourDetener);
+    }
+    return overlay;
+  }
+  function tourIniciar() {
+    tourIdx = 0;
+    tourElementos().style.display = "block";
+    tourMostrarPaso();
+  }
+  function tourDetener() {
+    try { speechSynthesis.cancel(); } catch (e) {}
+    const overlay = document.getElementById("tourOverlay");
+    if (overlay) overlay.style.display = "none";
+  }
+  function tourSiguiente() {
+    if (tourIdx < TOUR_PASOS.length - 1) { tourIdx++; tourMostrarPaso(); } else tourDetener();
+  }
+  function tourAnterior() {
+    if (tourIdx > 0) { tourIdx--; tourMostrarPaso(); }
+  }
+  function tourMostrarPaso() {
+    const paso = TOUR_PASOS[tourIdx];
+    if (paso.tab) {
+      const btnTab = document.querySelector(`nav.tabs button[data-tab="${paso.tab}"]`);
+      if (btnTab && !btnTab.classList.contains("active")) btnTab.click();
+    }
+    document.getElementById("tourContador").textContent = (tourIdx + 1) + " / " + TOUR_PASOS.length;
+    document.getElementById("tourTexto").textContent = paso.texto;
+    document.getElementById("tourAnterior").style.visibility = tourIdx === 0 ? "hidden" : "visible";
+    document.getElementById("tourSiguiente").textContent = tourIdx === TOUR_PASOS.length - 1 ? "Finalizar" : "Siguiente →";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target = paso.selector ? document.querySelector(paso.selector) : null;
+      const highlight = document.getElementById("tourHighlight");
+      const card = document.getElementById("tourCard");
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => {
+          const r = target.getBoundingClientRect();
+          highlight.style.display = "block";
+          highlight.style.top = (r.top - 6) + "px";
+          highlight.style.left = (r.left - 6) + "px";
+          highlight.style.width = (r.width + 12) + "px";
+          highlight.style.height = (r.height + 12) + "px";
+          let cardTop = r.bottom + 12;
+          const cardAlto = 120;
+          if (cardTop + cardAlto > window.innerHeight) cardTop = Math.max(10, r.top - cardAlto);
+          card.style.transform = "";
+          card.style.top = cardTop + "px";
+          card.style.left = Math.min(Math.max(10, r.left), window.innerWidth - 270) + "px";
+        }, 320);
+      } else {
+        highlight.style.display = "none";
+        card.style.top = "50%";
+        card.style.left = "50%";
+        card.style.transform = "translate(-50%, -50%)";
+      }
+    }));
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(paso.texto);
+      u.lang = "es-CO";
+      u.rate = 1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  document.getElementById("btnIniciarTour").addEventListener("click", tourIniciar);
 
   // ================= INIT =================
   function init() {
